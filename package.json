@@ -1,0 +1,28 @@
+{
+  "name": "kasir_api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/server.js",
+  "scripts": {
+    "start": "nodemon ./src/server.js",
+    "migrate": "node-pg-migrate",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Agung Ramananda",
+  "license": "ISC",
+  "dependencies": {
+    "@antoniogiordano/hacli": "^1.0.2",
+    "@hapi/hapi": "^21.3.10",
+    "@hapi/jwt": "^3.2.0",
+    "auto-bind": "^4.0.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "joi": "^17.13.3",
+    "moment": "^2.30.1",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "node-pg-migrate": "^7.6.1",
+    "nodemon": "^3.1.4"
+  }
+}
