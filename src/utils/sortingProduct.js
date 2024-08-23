@@ -4,7 +4,7 @@ const sortingProduct = ({ orderBy, sortBy }, sql) => {
   if (orderBy == "name") {
     sql += `ORDER BY p.product_name`;
   } else if (orderBy == "category") {
-    sql += `ORDER BY c.category`;
+    sql += `ORDER BY p.category_id`;
   } else if (orderBy == "updated") {
     sql += `ORDER BY p.updated_at`;
   } else {
