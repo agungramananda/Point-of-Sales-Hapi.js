@@ -47,56 +47,6 @@ const routes = (handler) => [
       },
     },
   },
-  /*
-  {
-    method: "GET",
-    path: "/report/product-sales",
-    handler: handler.getProductSalesReportHandler,
-    config: {
-      plugins: {
-        hacli: {
-          permissions: ["CAN_GET_REPORT"],
-        },
-      },
-    },
-  },
-  {
-    method: "POST",
-    path: "/report/product-sales",
-    handler: handler.postProductSalesReportHandler,
-    config: {
-      plugins: {
-        hacli: {
-          permissions: ["CAN_MAKE_SALES_REPORT"],
-        },
-      },
-    },
-  },
-  {
-    method: "GET",
-    path: "/report/product-purchase",
-    handler: handler.getProductPurchaseReportHandler,
-    config: {
-      plugins: {
-        hacli: {
-          permissions: ["CAN_GET_REPORT"],
-        },
-      },
-    },
-  },
-  {
-    method: "POST",
-    path: "/report/product-purchase",
-    handler: handler.postProductPurchaseReportHandler,
-    config: {
-      plugins: {
-        hacli: {
-          permissions: ["CAN_MAKE_PURCHASE_REPORT"],
-        },
-      },
-    },
-  },
-  */
 ];
 
 module.exports = routes;
