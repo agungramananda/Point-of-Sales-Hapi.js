@@ -8,8 +8,13 @@ class UsersHandler {
     autoBind(this);
   }
 
-  async getUsersHandler(_, h) {
-    const users = await this._service.getUsers();
+  async getUsersHandler(request, h) {
+    const { name, page, limit } = request.query;
+    const users = await this._service.getUsers({
+      name,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({

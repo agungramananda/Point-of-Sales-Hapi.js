@@ -1,16 +1,20 @@
 const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
+const { pagination, getMaxPage } = require("../../utils/pagination");
 
 class TransactionsService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getTransactions() {
+  async getTransactions({ page, limit }) {
+    const query = `SELECT * FROM transactions ORDER BY created_at DESC LIMIT $1 OFFSET $2`;
+    const p = pagination({ limit, page });
+    const infoPage = await getMaxPage(p, "transactions");
     try {
-      const result = await this._pool.query(`SELECT * FROM transactions`);
-      return result.rows;
+      const result = await this._pool.query(query, [p.limit, p.offset]);
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }

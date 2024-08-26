@@ -25,8 +25,12 @@ class CategoriesHandler {
       .code(201);
   }
 
-  async getCategoriesHandler(_, h) {
-    const categories = await this._service.getCategories();
+  async getCategoriesHandler(request, h) {
+    const { limit, page } = request.query;
+    const categories = await this._service.getCategories({
+      limit: parseInt(limit),
+      page: parseInt(page),
+    });
 
     return h
       .response({

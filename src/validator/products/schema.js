@@ -21,13 +21,17 @@ const ProductsEditPriceSchema = Joi.object({
 
 const ProductSortQuerySchema = Joi.object({
   orderBy: Joi.string()
-    .valid("name", "category", "updated", "id")
+    .valid("name", "category", "updated", "id", "price")
     .default("id")
     .allow(""),
   sortBy: Joi.string()
     .valid("asc", "desc", "ASC", "DESC")
     .default("ASC")
     .allow(""),
+  filter: Joi.string().allow(""),
+  name: Joi.string().allow(""),
+  page: Joi.number().integer().default(1).allow(""),
+  limit: Joi.number().integer().default(5).allow(""),
 });
 
 module.exports = {

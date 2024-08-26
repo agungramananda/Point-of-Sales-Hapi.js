@@ -9,7 +9,7 @@ class ReportHandler {
   }
 
   async getSalesReportHandler(request, h) {
-    const { start, end } = request.query;
+    const { start, end, page, limit } = request.query;
 
     const startDate = new Date(start);
 
@@ -27,7 +27,12 @@ class ReportHandler {
 
     this._validator.validateSalesReportQuery({ startDate, endDate });
 
-    const report = await this._service.getSalesReport({ startDate, endDate });
+    const report = await this._service.getSalesReport({
+      startDate,
+      endDate,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({
@@ -40,12 +45,16 @@ class ReportHandler {
   }
 
   async getPurchaseReportHandler(request, h) {
-    const { date } = request.query;
+    const { date, page, limit } = request.query;
 
     const purchase_date = new Date(date);
     this._validator.validatePurchaseReportQuery({ purchase_date });
 
-    const report = await this._service.getPurchaseReport({ purchase_date });
+    const report = await this._service.getPurchaseReport({
+      purchase_date,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({

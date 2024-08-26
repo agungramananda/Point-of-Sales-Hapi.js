@@ -1,18 +1,29 @@
 const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
+const { pagination, getMaxPage } = require("../../utils/pagination");
+const { searchName } = require("../../utils/searchName");
 
 class SupplierService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getAllSuppliers() {
+  async getAllSuppliers({ name, page, limit }) {
+    let query = `
+      SELECT id,supplier_name,contact,address FROM suppliers WHERE deleted_at IS NULL
+    `;
+    query = searchName({ keyword: name }, "supplier_name", query);
+    console.log(query);
+    const p = pagination({ limit, page });
+    const sql = {
+      text: `${query} LIMIT $1 OFFSET $2`,
+      values: [p.limit, p.offset],
+    };
+    const infoPage = await getMaxPage(p, "suppliers");
     try {
-      const result = await this._pool.query(
-        "SELECT id,supplier_name,contact,address FROM suppliers WHERE deleted_at IS NULL"
-      );
-      return result.rows;
+      const result = await this._pool.query(sql);
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }

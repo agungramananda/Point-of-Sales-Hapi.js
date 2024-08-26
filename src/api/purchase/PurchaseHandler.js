@@ -8,8 +8,14 @@ class PurchaseHandler {
     autoBind(this);
   }
 
-  async getAllPurchaseHandler(_, h) {
-    const allPurchase = await this._service.getAllPurchase();
+  async getAllPurchaseHandler(request, h) {
+    const { supplier_name, product_name, page, limit } = request.query;
+    const allPurchase = await this._service.getAllPurchase({
+      supplier_name,
+      product_name,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({

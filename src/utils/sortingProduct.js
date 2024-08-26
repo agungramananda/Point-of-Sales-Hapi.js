@@ -1,14 +1,19 @@
 const sortingProduct = ({ orderBy, sortBy }, sql) => {
+  if (orderBy == null && sortBy == null) {
+    return sql;
+  }
   let sort = sortBy.toUpperCase();
 
   if (orderBy == "name") {
-    sql += `ORDER BY p.product_name`;
+    sql += ` ORDER BY p.product_name`;
   } else if (orderBy == "category") {
-    sql += `ORDER BY p.category_id`;
+    sql += ` ORDER BY p.category_id`;
   } else if (orderBy == "updated") {
-    sql += `ORDER BY p.updated_at`;
+    sql += ` ORDER BY p.updated_at`;
+  } else if (orderBy == "price") {
+    sql += ` ORDER BY p.price`;
   } else {
-    sql += `ORDER BY p.id`;
+    sql += ` ORDER BY p.id`;
   }
 
   if (orderBy != null) {

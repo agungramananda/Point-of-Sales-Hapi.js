@@ -11,9 +11,16 @@ class ProductsHandler {
 
   async getProductsHandler(request, h) {
     this._validator.validateSortQuery(request.query);
-    const { orderBy, sortBy } = request.query;
+    const { orderBy, sortBy, filter, name, page, limit } = request.query;
 
-    const products = await this._service.getProducts({ orderBy, sortBy });
+    const products = await this._service.getProducts({
+      orderBy,
+      sortBy,
+      filter,
+      name,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({

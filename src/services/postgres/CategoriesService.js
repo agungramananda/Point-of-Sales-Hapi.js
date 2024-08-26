@@ -2,7 +2,7 @@ const { Pool } = require("pg");
 
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
-const { server } = require("@hapi/hapi");
+const { pagination, getMaxPage } = require("../../utils/pagination");
 
 class CategoriesService {
   constructor() {
@@ -39,13 +39,17 @@ class CategoriesService {
     }
   }
 
-  async getCategories() {
-    try {
-      const result = await this._pool.query(
-        "SELECT id,category FROM categories WHERE deleted_at IS NULL"
-      );
+  async getCategories({ limit, page }) {
+    const p = pagination({ limit, page });
 
-      return result.rows;
+    const infoPage = await getMaxPage(p, "categories");
+    const query = {
+      text: "SELECT id,category FROM categories WHERE deleted_at IS NULL LIMIT $1 OFFSET $2",
+      values: [p.limit, p.offset],
+    };
+    try {
+      const result = await this._pool.query(query);
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }

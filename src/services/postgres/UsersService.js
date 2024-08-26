@@ -1,27 +1,34 @@
 const { Pool } = require("pg");
 const bcrypt = require("bcrypt");
 const InvariantError = require("../../exceptions/InvariantError");
-const AuthenticationError = require("../../exceptions/AuthenticationError");
 const NotFoundError = require("../../exceptions/NotFoundError");
+const { pagination, getMaxPage } = require("../../utils/pagination");
+const { searchName } = require("../../utils/searchName");
 
 class UserService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getUsers() {
-    try {
-      const result = await this._pool.query(
-        `SELECT 
+  async getUsers({ name, page, limit }) {
+    let query = `SELECT 
          u.id, u.username, u.name, r.role, u.status
          FROM users u
          LEFT JOIN
          roles r ON u.role_id = r.id
          WHERE 
-         u.deleted_at IS NULL
-         `
-      );
-      return result.rows;
+         u.deleted_at IS NULL `;
+    query = searchName({ keyword: name }, "users u", "u.name", query);
+    const p = pagination({ limit, page });
+    const infoPage = await getMaxPage(p, "users");
+    const sql = {
+      text: `${query} LIMIT $1 OFFSET $2`,
+      values: [p.limit, p.offset],
+    };
+    console.log(sql);
+    try {
+      const result = await this._pool.query(sql);
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }

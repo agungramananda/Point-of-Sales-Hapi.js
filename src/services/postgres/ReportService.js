@@ -1,26 +1,32 @@
 const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
+const { pagination, getMaxPage } = require("../../utils/pagination");
 
 class ReportService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getSalesReport({ startDate, endDate }) {
+  async getSalesReport({ startDate, endDate, page, limit }) {
     const query = {
       text: "SELECT transaction_date,total_income,total_transaction FROM sales_summary WHERE transaction_date BETWEEN $1 AND $2 ORDER BY transaction_date ASC",
       values: [startDate, endDate],
     };
+    const p = pagination({ limit, page });
+
+    query.text += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
+    console.log(query.text);
+    const infoPage = await getMaxPage(p, "sales_summary");
 
     try {
       const result = await this._pool.query(query);
-      return result.rows;
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }
   }
 
-  async getPurchaseReport({ purchase_date }) {
+  async getPurchaseReport({ purchase_date, page, limit }) {
     const query = {
       text: `
       select 
@@ -34,10 +40,15 @@ class ReportService {
       `,
       values: [purchase_date],
     };
+    const p = pagination({ limit, page });
+
+    query.text += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
+    console.log(query.text);
+    const infoPage = await getMaxPage(p, "sales_summary");
 
     try {
       const result = await this._pool.query(query);
-      return result.rows;
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }

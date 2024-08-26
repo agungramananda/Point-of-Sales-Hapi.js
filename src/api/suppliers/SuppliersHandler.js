@@ -8,8 +8,13 @@ class SuppliersHandler {
     autoBind(this);
   }
 
-  async getSuppliersHandler(_, h) {
-    const allSupplier = await this._service.getAllSuppliers();
+  async getSuppliersHandler(request, h) {
+    const { name, page, limit } = request.query;
+    const allSupplier = await this._service.getAllSuppliers({
+      name,
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({

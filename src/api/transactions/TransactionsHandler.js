@@ -8,8 +8,12 @@ class TransactionsHandler {
     autoBind(this);
   }
 
-  async getTransactionsHandler(_, h) {
-    const transactions = await this._service.getTransactions();
+  async getTransactionsHandler(request, h) {
+    const { page, limit } = request.query;
+    const transactions = await this._service.getTransactions({
+      page: parseInt(page),
+      limit: parseInt(limit),
+    });
 
     return h
       .response({

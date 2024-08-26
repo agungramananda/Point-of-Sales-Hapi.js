@@ -2,13 +2,16 @@ const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
 const { sortingProduct } = require("../../utils/sortingProduct");
+const { filterProduct } = require("../../utils/filterProduct");
+const { pagination, getMaxPage } = require("../../utils/pagination");
+const { searchName } = require("../../utils/searchName");
 
 class ProductsService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getProducts({ orderBy, sortBy }) {
+  async getProducts({ orderBy, sortBy, filter, name, page, limit }) {
     let query = `
         SELECT 
         p.id, p.product_name, p.price, p.category_id, c.category, s.amount
@@ -21,11 +24,21 @@ class ProductsService {
         WHERE
         p.deleted_at IS NULL
         `;
+    const column = "p.product_name";
+    query = searchName({ keyword: name }, column, query);
+    query = await filterProduct({ category: filter }, query);
     query = sortingProduct({ orderBy, sortBy }, query);
-    try {
-      const result = await this._pool.query(query);
+    const p = pagination({ limit, page });
 
-      return result.rows;
+    const sql = {
+      text: `${query} LIMIT $1 OFFSET $2`,
+      values: [p.limit, p.offset],
+    };
+    const infoPage = await getMaxPage(p, "products");
+    try {
+      const result = await this._pool.query(sql);
+
+      return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
     }
