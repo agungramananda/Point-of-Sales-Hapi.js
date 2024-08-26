@@ -15,12 +15,10 @@ class ReportService {
     const p = pagination({ limit, page });
 
     query.text += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
-    console.log(query.text);
-    const infoPage = await getMaxPage(p, "sales_summary");
 
     try {
       const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
+      return result.rows;
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -43,12 +41,10 @@ class ReportService {
     const p = pagination({ limit, page });
 
     query.text += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
-    console.log(query.text);
-    const infoPage = await getMaxPage(p, "sales_summary");
 
     try {
       const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
+      return result.rows;
     } catch (error) {
       throw new InvariantError(error.message);
     }

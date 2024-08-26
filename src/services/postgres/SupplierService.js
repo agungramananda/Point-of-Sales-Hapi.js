@@ -19,7 +19,6 @@ class SupplierService {
       "s.supplier_name",
       query
     );
-    console.log(query);
     const p = pagination({ limit, page });
     const sql = {
       text: `${query} LIMIT $1 OFFSET $2`,

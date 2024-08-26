@@ -1,5 +1,4 @@
 const autoBind = require("auto-bind");
-const sortingProduct = require("../../utils/sortingProduct");
 
 class ProductsHandler {
   constructor(service, validator) {
