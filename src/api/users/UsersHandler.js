@@ -9,9 +9,10 @@ class UsersHandler {
   }
 
   async getUsersHandler(request, h) {
-    const { name, page, limit } = request.query;
+    const { name, role, page, limit } = request.query;
     const users = await this._service.getUsers({
       name,
+      role,
       page: parseInt(page),
       limit: parseInt(limit),
     });

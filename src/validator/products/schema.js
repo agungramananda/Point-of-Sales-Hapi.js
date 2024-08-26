@@ -28,10 +28,10 @@ const ProductSortQuerySchema = Joi.object({
     .valid("asc", "desc", "ASC", "DESC")
     .default("ASC")
     .allow(""),
-  filter: Joi.string().allow(""),
-  name: Joi.string().allow(""),
-  page: Joi.number().integer().default(1).allow(""),
-  limit: Joi.number().integer().default(5).allow(""),
+  filter: Joi.string().allow("").default(""),
+  name: Joi.string().allow("").default(""),
+  page: Joi.string().default("1").allow(""),
+  limit: Joi.string().default("25").allow(""),
 });
 
 module.exports = {

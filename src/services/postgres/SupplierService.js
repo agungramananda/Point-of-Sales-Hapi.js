@@ -11,9 +11,14 @@ class SupplierService {
 
   async getAllSuppliers({ name, page, limit }) {
     let query = `
-      SELECT id,supplier_name,contact,address FROM suppliers WHERE deleted_at IS NULL
+      SELECT s.id,s.supplier_name,s.contact,s.address FROM suppliers s WHERE s.deleted_at IS NULL
     `;
-    query = searchName({ keyword: name }, "supplier_name", query);
+    query = searchName(
+      { keyword: name },
+      "suppliers s",
+      "s.supplier_name",
+      query
+    );
     console.log(query);
     const p = pagination({ limit, page });
     const sql = {

@@ -4,13 +4,14 @@ const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { searchName } = require("../../utils/searchName");
+const { filterQuery } = require("../../utils/filterQuery");
 
 class UserService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getUsers({ name, page, limit }) {
+  async getUsers({ name, role, page, limit }) {
     let query = `SELECT 
          u.id, u.username, u.name, r.role, u.status
          FROM users u
@@ -19,13 +20,13 @@ class UserService {
          WHERE 
          u.deleted_at IS NULL `;
     query = searchName({ keyword: name }, "users u", "u.name", query);
+    query = await filterQuery({ keyword: role }, "roles r", "r.role", query);
     const p = pagination({ limit, page });
     const infoPage = await getMaxPage(p, "users");
     const sql = {
       text: `${query} LIMIT $1 OFFSET $2`,
       values: [p.limit, p.offset],
     };
-    console.log(sql);
     try {
       const result = await this._pool.query(sql);
       return { data: result.rows, infoPage };
