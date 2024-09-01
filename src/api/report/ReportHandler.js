@@ -12,7 +12,7 @@ class ReportHandler {
     this._validator.validateSalesReportQuery(request.query);
     let { startDate, endDate, page, limit } = request.query;
 
-    const report = await this._service.getSalesReport({
+    const { data, infoPage } = await this._service.getSalesReport({
       startDate,
       endDate,
       page,
@@ -22,9 +22,8 @@ class ReportHandler {
     return h
       .response({
         status: "success",
-        data: {
-          report,
-        },
+        data,
+        infoPage,
       })
       .code(200);
   }
@@ -32,7 +31,7 @@ class ReportHandler {
   async getPurchaseReportHandler(request, h) {
     this._validator.validatePurchaseReportQuery(request.query);
     const { startDate, endDate, page, limit } = request.query;
-    const report = await this._service.getPurchaseReport({
+    const { data, infoPage } = await this._service.getPurchaseReport({
       startDate,
       endDate,
       page,
@@ -42,45 +41,46 @@ class ReportHandler {
     return h
       .response({
         status: "success",
-        data: {
-          report,
-        },
+        data,
+        infoPage,
       })
       .code(200);
   }
 
-  async postSalesReportHandler(request, h) {
-    const { date } = request.payload;
-    const transaction_date = new Date(date);
-
-    this._validator.validateSalesReportPayload({ transaction_date });
-    const newReport = await this._service.addSalesReport(transaction_date);
+  async getProductSalesReportHandler(request, h) {
+    this._validator.validateProductReportQuery(request.query);
+    const { date, page, limit } = request.query;
+    const { data, infoPage } = await this._service.getProductSalesReport({
+      date,
+      page,
+      limit,
+    });
 
     return h
       .response({
         status: "success",
-        message: "Berhasil membuat laporan penjualan",
-        data: {
-          newReport,
-        },
+        data,
+        infoPage,
       })
-      .code(201);
+      .code(200);
   }
 
-  async postPurchaseReportHandler(request, h) {
-    const { date } = request.payload;
-    const purchase_date = new Date(date);
-    this._validator.validatePurchaseReportPayload({ purchase_date });
-
-    const newReport = await this._service.addPurchaseReport({ purchase_date });
-
-    return h.response({
-      status: "success",
-      message: "Berhasil membuat laporan pembelian",
-      data: {
-        newReport,
-      },
+  async getProductPurchaseReportHandler(request, h) {
+    this._validator.validateProductReportQuery(request.query);
+    const { date, page, limit } = request.query;
+    const { data, infoPage } = await this._service.getProductPurchaseReport({
+      date,
+      page,
+      limit,
     });
+
+    return h
+      .response({
+        status: "success",
+        data,
+        infoPage,
+      })
+      .code(200);
   }
 }
 

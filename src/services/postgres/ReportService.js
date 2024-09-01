@@ -56,6 +56,56 @@ class ReportService {
       throw new InvariantError(error.message);
     }
   }
+
+  async getProductSalesReport({ date, page, limit }) {
+    if (!date) {
+      date = new Date().toISOString().split("T")[0];
+    }
+    let query = `
+    SELECT
+    p.product_name,
+    SUM(t.quantity) AS total_sales,
+    SUM(t.total_price) AS total_income
+    FROM transaction_details t
+    LEFT JOIN products p ON t.product_id = p.id
+    where DATE(t.created_at) = '${date}'
+    group by p.product_name 
+    `;
+    const p = pagination({ limit, page });
+    const infoPage = await getMaxPage(p, query);
+    query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
+    try {
+      const result = await this._pool.query(query);
+      return { data: result.rows, infoPage };
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
+
+  async getProductPurchaseReport({ date, page, limit }) {
+    if (!date) {
+      date = new Date().toISOString().split("T")[0];
+    }
+    let query = `
+    SELECT
+    i.product_name,
+    SUM(p.quantity) AS total_purchase,
+    SUM(p.total_price) AS total_expense
+    FROM purchase p
+    LEFT JOIN products i ON p.product_id = i.id
+    WHERE DATE(p.created_at) = '${date}'
+    GROUP BY i.product_name
+    `;
+    const p = pagination({ limit, page });
+    const infoPage = await getMaxPage(p, query);
+    query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
+    try {
+      const result = await this._pool.query(query);
+      return { data: result.rows, infoPage };
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
 }
 
 module.exports = ReportService;
