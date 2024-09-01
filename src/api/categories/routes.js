@@ -5,8 +5,8 @@ const routes = (handler) => [
     handler: handler.postCategoryHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_CATEGORY"],
+        rbac: {
+          permissions: ["CREATE_CATEGORY"],
         },
       },
     },
@@ -17,8 +17,8 @@ const routes = (handler) => [
     handler: handler.getCategoriesHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_CATEGORY"],
+        rbac: {
+          permissions: ["READ_CATEGORY"],
         },
       },
     },
@@ -29,8 +29,8 @@ const routes = (handler) => [
     handler: handler.putCategoryByIdHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_CATEGORY"],
+        rbac: {
+          permissions: ["UPDATE_CATEGORY"],
         },
       },
     },
@@ -41,8 +41,8 @@ const routes = (handler) => [
     handler: handler.deleteCategoryByIdHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_CATEGORY"],
+        rbac: {
+          permissions: ["DELETE_CATEGORY"],
         },
       },
     },

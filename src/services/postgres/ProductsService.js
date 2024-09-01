@@ -24,8 +24,12 @@ class ProductsService {
         WHERE
         p.deleted_at IS NULL
         `;
-    const column = "p.product_name";
-    query = searchName({ keyword: name }, "products p", column, query);
+    query = searchName(
+      { keyword: name },
+      "products p",
+      "p.product_name",
+      query
+    );
     query = await filterQuery(
       { keyword: category },
       "categories c",
@@ -39,7 +43,7 @@ class ProductsService {
       text: `${query} LIMIT $1 OFFSET $2`,
       values: [p.limit, p.offset],
     };
-    const infoPage = await getMaxPage(p, "products");
+    const infoPage = await getMaxPage(p, query);
     try {
       const result = await this._pool.query(sql);
 

@@ -14,7 +14,9 @@ const filterQuery = async ({ keyword }, table, column, sql) => {
     };
     const check = await pool.query(checkQuery);
     if (check.rows.length === 0) {
-      throw new InvariantError(`Gagal mengambil data. ${keyword} tidak valid`);
+      throw new InvariantError(
+        `Gagal mengambil data. ${keyword} tidak ada dalam ${table.slice(0, -1)}`
+      );
     }
     sql += ` AND ${column} = '${keyword}'`;
     return sql;

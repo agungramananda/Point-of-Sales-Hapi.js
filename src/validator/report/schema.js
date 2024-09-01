@@ -1,25 +1,20 @@
 const Joi = require("joi");
 
 const SalesReportQuerySchema = Joi.object({
-  startDate: Joi.date().required(),
-  endDate: Joi.date().required(),
-});
-
-const SalesReportPayloadSchema = Joi.object({
-  transaction_date: Joi.date().required(),
-});
-
-const PurchaseReportPayloadSchema = Joi.object({
-  purchase_date: Joi.date().required(),
+  startDate: Joi.date().allow(""),
+  endDate: Joi.date().allow(""),
+  page: Joi.number().integer().allow("").default(1),
+  limit: Joi.number().integer().min(1).allow("").default(25),
 });
 
 const PurchaseReportQuerySchema = Joi.object({
-  purchase_date: Joi.date().required(),
+  startDate: Joi.date().allow(""),
+  endDate: Joi.date().allow(""),
+  page: Joi.number().integer().allow("").default(1),
+  limit: Joi.number().integer().min(1).allow("").default(25),
 });
 
 module.exports = {
-  SalesReportPayloadSchema,
   SalesReportQuerySchema,
-  PurchaseReportPayloadSchema,
   PurchaseReportQuerySchema,
 };

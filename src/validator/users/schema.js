@@ -12,4 +12,11 @@ const UsersPayloadSchema = Joi.object({
   status: Joi.number().integer().valid(1, 0).required(),
 });
 
-module.exports = { UsersParamsSchema, UsersPayloadSchema };
+const UsersQuerySchema = Joi.object({
+  name: Joi.string().allow(""),
+  role: Joi.string().allow(""),
+  page: Joi.number().integer().default(1),
+  limit: Joi.number().integer().default(25),
+});
+
+module.exports = { UsersParamsSchema, UsersPayloadSchema, UsersQuerySchema };

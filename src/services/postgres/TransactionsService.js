@@ -2,18 +2,24 @@ const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
+const { beetwenDate } = require("../../utils/betweenDate");
 
 class TransactionsService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getTransactions({ page, limit }) {
-    const query = `SELECT * FROM transactions ORDER BY created_at DESC LIMIT $1 OFFSET $2`;
+  async getTransactions({ startDate, endDate, page, limit }) {
+    let query = `SELECT * FROM transactions WHERE created_at IS NOT NULL`;
+    query = beetwenDate(startDate, endDate, "created_at", query);
     const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, "transactions");
+    const infoPage = await getMaxPage(p, query);
+    const sql = {
+      text: `${query} ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      values: [p.limit, p.offset],
+    };
     try {
-      const result = await this._pool.query(query, [p.limit, p.offset]);
+      const result = await this._pool.query(sql);
       return { data: result.rows, infoPage };
     } catch (error) {
       throw new InvariantError(error.message);
@@ -44,8 +50,8 @@ class TransactionsService {
     }
   }
 
-  //optimalkan
   async addTransaction({ user_id, items, payment }) {
+    //items = [{product_id, product_price, quantity, total_price}]
     const verifyUser = {
       text: "SELECT id FROM users WHERE id = $1 AND status = 1 AND deleted_at IS NULL",
       values: [user_id],

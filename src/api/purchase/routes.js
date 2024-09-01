@@ -5,8 +5,8 @@ const routes = (handler) => [
     handler: handler.getAllPurchaseHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_GET_PURCHASE"],
+        rbac: {
+          permissions: ["READ_PURCHASE"],
         },
       },
     },
@@ -17,8 +17,8 @@ const routes = (handler) => [
     handler: handler.getPurchaseByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_GET_PURCHASE"],
+        rbac: {
+          permissions: ["READ_PURCHASE"],
         },
       },
     },
@@ -29,8 +29,8 @@ const routes = (handler) => [
     handler: handler.postPurchaseHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_INSERT_PURCHASE"],
+        rbac: {
+          permissions: ["CREATE_PURCHASE"],
         },
       },
     },

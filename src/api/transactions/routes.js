@@ -1,3 +1,5 @@
+const rbac = require("../../plugins/rbac");
+
 const routes = (handler) => [
   {
     method: "GET",
@@ -5,8 +7,8 @@ const routes = (handler) => [
     handler: handler.getTransactionsHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_GET_TRANSACTION"],
+        rbac: {
+          permissions: ["READ_TRANSACTION"],
         },
       },
     },
@@ -17,8 +19,8 @@ const routes = (handler) => [
     handler: handler.getTransactionDetailsHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_GET_TRANSACTION"],
+        rbac: {
+          permission: ["READ_TRANSACTION"],
         },
       },
     },
@@ -29,8 +31,8 @@ const routes = (handler) => [
     handler: handler.postTransactionHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_MAKE_TRANSACTION"],
+        rbac: {
+          permissions: ["CREATE_TRANSACTION"],
         },
       },
     },

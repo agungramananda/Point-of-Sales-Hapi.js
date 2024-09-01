@@ -1,3 +1,5 @@
+const rbac = require("../../plugins/rbac");
+
 const routes = (handler) => [
   {
     method: "GET",
@@ -5,8 +7,8 @@ const routes = (handler) => [
     handler: handler.getUsersHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["ACCESS_TO_USER"],
+        rbac: {
+          permissions: ["READ_USER"],
         },
       },
     },
@@ -17,8 +19,8 @@ const routes = (handler) => [
     handler: handler.getUserByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["ACCESS_TO_USER"],
+        rbac: {
+          permissions: ["READ_USER"],
         },
       },
     },
@@ -29,8 +31,8 @@ const routes = (handler) => [
     handler: handler.postUserHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["ACCESS_TO_USER"],
+        rbac: {
+          permissions: ["CREATE_USER"],
         },
       },
     },
@@ -41,8 +43,8 @@ const routes = (handler) => [
     handler: handler.putUserByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["ACCESS_TO_USER"],
+        rbac: {
+          permissions: ["UPDATE_USER"],
         },
       },
     },
@@ -53,8 +55,8 @@ const routes = (handler) => [
     handler: handler.deleteUserByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["ACCESS_TO_USER"],
+        rbac: {
+          permissions: ["DELETE_USER"],
         },
       },
     },

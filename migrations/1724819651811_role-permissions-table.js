@@ -9,12 +9,19 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("roles", {
+  pgm.createTable("role_permissions", {
     id: "id",
-    role: {
-      type: "VARCHAR(50)",
+    role_id: {
+      type: "INT",
       notNull: true,
-      unique: true,
+      references: "roles",
+      onDelete: "CASCADE",
+    },
+    permission_id: {
+      type: "INT",
+      notNull: true,
+      references: "permissions",
+      onDelete: "CASCADE",
     },
   });
 };
@@ -25,5 +32,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("roles");
+  pgm.dropTable("role_permissions");
 };

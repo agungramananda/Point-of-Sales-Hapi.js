@@ -12,4 +12,15 @@ const PurchasePayloadSchema = Joi.object({
   total_price: Joi.number().required(),
 });
 
-module.exports = { PurchaseParamsSchema, PurchasePayloadSchema };
+const PurchaseQuerySchema = Joi.object({
+  supplierName: Joi.string().allow(""),
+  productName: Joi.string().allow(""),
+  page: Joi.number().integer().required(),
+  limit: Joi.number().integer().required(),
+});
+
+module.exports = {
+  PurchaseParamsSchema,
+  PurchasePayloadSchema,
+  PurchaseQuerySchema,
+};

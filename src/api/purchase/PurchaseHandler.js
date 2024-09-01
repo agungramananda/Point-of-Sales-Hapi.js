@@ -9,20 +9,20 @@ class PurchaseHandler {
   }
 
   async getAllPurchaseHandler(request, h) {
-    const { supplier_name, product_name, page, limit } = request.query;
-    const allPurchase = await this._service.getAllPurchase({
-      supplier_name,
-      product_name,
-      page: parseInt(page),
-      limit: parseInt(limit),
+    this._validator.validatePurchaseQuery(request.query);
+    const { supplierName, productName, page, limit } = request.query;
+    const { data, infoPage } = await this._service.getAllPurchase({
+      supplierName,
+      productName,
+      page,
+      limit,
     });
 
     return h
       .response({
         status: "success",
-        data: {
-          allPurchase,
-        },
+        data,
+        infoPage,
       })
       .code(200);
   }

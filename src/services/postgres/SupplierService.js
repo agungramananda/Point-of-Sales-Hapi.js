@@ -24,7 +24,7 @@ class SupplierService {
       text: `${query} LIMIT $1 OFFSET $2`,
       values: [p.limit, p.offset],
     };
-    const infoPage = await getMaxPage(p, "suppliers");
+    const infoPage = await getMaxPage(p, query);
     try {
       const result = await this._pool.query(sql);
       return { data: result.rows, infoPage };

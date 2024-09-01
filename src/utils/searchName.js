@@ -19,7 +19,7 @@ const searchName = ({ keyword }, table, column, sql) => {
       );
     }
   } catch (error) {}
-  sql += `AND ${column} LIKE '%${keyword}%'`;
+  sql += ` AND ${column} LIKE '%${keyword}%'`;
   return sql;
 };
 

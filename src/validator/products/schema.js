@@ -23,15 +23,17 @@ const ProductSortQuerySchema = Joi.object({
   orderBy: Joi.string()
     .valid("name", "category", "updated", "id", "price")
     .default("id")
-    .allow(""),
+    .allow("")
+    .optional(),
   sortBy: Joi.string()
     .valid("asc", "desc", "ASC", "DESC")
     .default("ASC")
-    .allow(""),
-  filter: Joi.string().allow("").default(""),
-  name: Joi.string().allow("").default(""),
-  page: Joi.string().default("1").allow(""),
-  limit: Joi.string().default("25").allow(""),
+    .allow("")
+    .optional(),
+  category: Joi.string().allow("").default("").optional(),
+  name: Joi.string().allow("").default("").optional(),
+  page: Joi.string().default("1").allow("").optional(),
+  limit: Joi.string().default("25").allow("").optional(),
 });
 
 module.exports = {

@@ -2,13 +2,21 @@ const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
 const { searchName } = require("../../utils/searchName");
 const { pagination, getMaxPage } = require("../../utils/pagination");
+const { beetwenDate } = require("../../utils/betweenDate");
 
 class PurchaseService {
   constructor() {
     this._pool = new Pool();
   }
 
-  async getAllPurchase({ supplier_name, product_name, page, limit }) {
+  async getAllPurchase({
+    supplierName,
+    productName,
+    startDate,
+    endDate,
+    page,
+    limit,
+  }) {
     let query = `
     SELECT p.id, s.supplier_name, p.product_id,i.product_name, p.quantity, p.price,p.total_price, p.created_at AS purchase_date
     FROM purchase p
@@ -18,24 +26,21 @@ class PurchaseService {
     products i ON p.product_id = i.id
     WHERE p.deleted_at IS NULL 
     `;
-    const columnSupplier = "s.supplier_name";
-    const columnProduct = "product_name";
-    query =
-      searchName(
-        { keyword: supplier_name },
-        "suppliers s",
-        columnSupplier,
-        query
-      ) + " ";
     query = searchName(
-      { keyword: product_name },
-      "products i",
-      columnProduct,
+      { keyword: supplierName },
+      "suppliers s",
+      "s.supplier_name",
       query
     );
-    console.log(query);
+    query = searchName(
+      { keyword: productName },
+      "products i",
+      "i.product_name",
+      query
+    );
+    query = beetwenDate(startDate, endDate, "p.created_at", query);
     const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, "purchase");
+    const infoPage = await getMaxPage(p, query);
     const sql = {
       text: `${query} LIMIT $1 OFFSET $2`,
       values: [p.limit, p.offset],

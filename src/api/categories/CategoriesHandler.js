@@ -26,16 +26,23 @@ class CategoriesHandler {
   }
 
   async getCategoriesHandler(request, h) {
-    const { limit, page } = request.query;
+    const { category, limit, page } = request.query;
+    this._validator.validateCategoryQuery({
+      category,
+      limit,
+      page,
+    });
     const categories = await this._service.getCategories({
-      limit: parseInt(limit),
-      page: parseInt(page),
+      category,
+      limit,
+      page,
     });
 
     return h
       .response({
         status: "success",
-        categories,
+        data: categories.data,
+        infoPage: categories.infoPage,
       })
       .code(200);
   }

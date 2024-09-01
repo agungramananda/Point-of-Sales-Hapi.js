@@ -10,4 +10,14 @@ const SupplierPayloadSchema = Joi.object({
   address: Joi.string().required(),
 });
 
-module.exports = { SupplierParamsSchema, SupplierPayloadSchema };
+const SupplierQuerySchema = Joi.object({
+  name: Joi.string().allow("").default("").optional(),
+  page: Joi.number().integer().default(1).optional().allow(""),
+  limit: Joi.number().integer().default(25).optional().allow(""),
+});
+
+module.exports = {
+  SupplierParamsSchema,
+  SupplierPayloadSchema,
+  SupplierQuerySchema,
+};

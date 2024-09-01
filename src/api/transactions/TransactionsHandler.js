@@ -9,18 +9,20 @@ class TransactionsHandler {
   }
 
   async getTransactionsHandler(request, h) {
-    const { page, limit } = request.query;
-    const transactions = await this._service.getTransactions({
-      page: parseInt(page),
-      limit: parseInt(limit),
+    this._validator.validateTransactionsQuery(request.query);
+    const { startDate, endDate, page, limit } = request.query;
+    const { data, infoPage } = await this._service.getTransactions({
+      startDate,
+      endDate,
+      page,
+      limit,
     });
 
     return h
       .response({
         status: "success",
-        data: {
-          transactions,
-        },
+        data,
+        infoPage,
       })
       .code(200);
   }

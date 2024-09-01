@@ -9,7 +9,14 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.sql(`INSERT INTO roles (role) VALUES('ACCOUNTING');`);
+  pgm.addColumn("transactions", {
+    member_id: {
+      type: "integer",
+      notNull: false,
+      references: "members",
+      onDelete: "CASCADE",
+    },
+  });
 };
 
 /**
@@ -17,4 +24,6 @@ exports.up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-exports.down = (pgm) => {};
+exports.down = (pgm) => {
+  pgm.dropColumn("transactions", "member_id");
+};

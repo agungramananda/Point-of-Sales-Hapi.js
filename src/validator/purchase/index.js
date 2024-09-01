@@ -1,5 +1,9 @@
 const InvariantError = require("../../exceptions/InvariantError");
-const { PurchaseParamsSchema, PurchasePayloadSchema } = require("./schema");
+const {
+  PurchaseParamsSchema,
+  PurchasePayloadSchema,
+  PurchaseQuerySchema,
+} = require("./schema");
 
 const PurchaseValidator = {
   validatePurchaseParams: (parmas) => {
@@ -10,6 +14,13 @@ const PurchaseValidator = {
   },
   validatePurchasePayload: (payload) => {
     const validationResult = PurchasePayloadSchema.validate(payload);
+
+    if (validationResult.error) {
+      throw new InvariantError(validationResult.error.message);
+    }
+  },
+  validatePurchaseQuery: (query) => {
+    const validationResult = PurchaseQuerySchema.validate(query);
 
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);

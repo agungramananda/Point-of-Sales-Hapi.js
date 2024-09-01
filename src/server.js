@@ -33,10 +33,15 @@ const report = require("./api/report");
 const ReportValidator = require("./validator/report");
 const ReportService = require("./services/postgres/ReportService");
 
+const roles = require("./api/roles");
+const RolesValidator = require("./validator/roles");
+const RolesService = require("./services/postgres/RolesService");
+
 const auth = require("./api/auth");
 const AuthValidator = require("./validator/auth");
 const AuthService = require("./services/postgres/AuthService");
 const tokenManager = require("./utils/tokenManager");
+const rbacPlugin = require("./plugins/rbac");
 
 const init = async () => {
   const categoriesService = new CategoriesService();
@@ -47,6 +52,7 @@ const init = async () => {
   const purchaseService = new PurchaseService();
   const authService = new AuthService();
   const reportService = new ReportService();
+  const rolesService = new RolesService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -63,36 +69,47 @@ const init = async () => {
       plugin: Jwt,
     },
     {
-      plugin: require("@antoniogiordano/hacli"),
+      plugin: rbacPlugin,
       options: {
-        permissions: {
-          ADMIN: {
-            MANAGER: {
-              CASHIER: {
-                CAN_GET_PRODUCT: {},
-                CAN_GET_TRANSACTION: {},
-                CAN_MAKE_TRANSACTION: {},
-                CAN_MAKE_SALES_REPORT: {},
-              },
-              WAREHOUSE: {
-                CAN_GET_PRODUCT: {},
-                CAN_INSERT_PRODUCT: {},
-                CAN_EDIT_PRODUCT: {},
-                CAN_DELETE_PRODUCT: {},
-                CRUD_CATEGORY: {},
-                CAN_GET_PURCHASE: {},
-                CAN_INSERT_PURCHASE: {},
-                CRUD_SUPPLIER: {},
-                CAN_MAKE_PURCHASE_REPORT: {},
-                CAN_GET_REPORT: {},
-              },
-              ACCOUNTING: {
-                CAN_GET_REPORT: {},
-              },
-            },
-            ACCESS_TO_USER: {},
-          },
-        },
+        validPermissions: [
+          "CREATE_PRODUCT",
+          "READ_PRODUCT",
+          "UPDATE_PRODUCT",
+          "DELETE_PRODUCT",
+          "CREATE_CATEGORY",
+          "READ_CATEGORY",
+          "UPDATE_CATEGORY",
+          "DELETE_CATEGORY",
+          "CREATE_USER",
+          "READ_USER",
+          "UPDATE_USER",
+          "DELETE_USER",
+          "CREATE_ROLE",
+          "READ_ROLE",
+          "UPDATE_ROLE",
+          "DELETE_ROLE",
+          "CREATE_SUPPLIER",
+          "READ_SUPPLIER",
+          "UPDATE_SUPPLIER",
+          "DELETE_SUPPLIER",
+          "CREATE_TRANSACTION",
+          "READ_TRANSACTION",
+          "CREATE_PURCHASE",
+          "READ_PURCHASE",
+          "CREATE_DISCOUNT",
+          "READ_DISCOUNT",
+          "UPDATE_DISCOUNT",
+          "DELETE_DISCOUNT",
+          "CREATE_CUSTOMER",
+          "READ_CUSTOMER",
+          "UPDATE_CUSTOMER",
+          "DELETE_CUSTOMER",
+          "CREATE_MEMBER",
+          "READ_MEMBER",
+          "UPDATE_MEMBER",
+          "DELETE_MEMBER",
+          "GET_REPORT",
+        ],
       },
     },
   ]);
@@ -173,6 +190,13 @@ const init = async () => {
         usersService,
         tokenManager,
         validator: AuthValidator,
+      },
+    },
+    {
+      plugin: roles,
+      options: {
+        service: rolesService,
+        validator: RolesValidator,
       },
     },
   ]);

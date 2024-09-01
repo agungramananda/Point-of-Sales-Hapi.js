@@ -1,5 +1,9 @@
 const InvariantError = require("../../exceptions/InvariantError");
-const { CategoryPayloadSchema, CategoryParamSchema } = require("./schema");
+const {
+  CategoryPayloadSchema,
+  CategoryParamSchema,
+  CategoryQuerySchema,
+} = require("./schema");
 
 const CategoryValidator = {
   validateCategoryPayload: (payload) => {
@@ -12,6 +16,14 @@ const CategoryValidator = {
 
   validateCategoryParam: (param) => {
     const validationResult = CategoryParamSchema.validate(param);
+    if (validationResult.error) {
+      throw new InvariantError(validationResult.error.message);
+    }
+  },
+
+  validateCategoryQuery: (query) => {
+    const validationResult = CategoryQuerySchema.validate(query);
+
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }

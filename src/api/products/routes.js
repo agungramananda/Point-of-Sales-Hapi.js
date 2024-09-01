@@ -5,8 +5,8 @@ const routes = (handler) => [
     handler: handler.getProductsHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_GET_PRODUCT"],
+        rbac: {
+          permission: ["READ_PRODUCT"],
         },
       },
     },
@@ -17,8 +17,8 @@ const routes = (handler) => [
     handler: handler.getProductByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_GET_PRODUCT"],
+        rbac: {
+          permission: ["READ_PRODUCT"],
         },
       },
     },
@@ -29,8 +29,8 @@ const routes = (handler) => [
     handler: handler.postProductHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_INSERT_PRODUCT"],
+        rbac: {
+          permission: ["CREATE_PRODUCT"],
         },
       },
     },
@@ -41,8 +41,8 @@ const routes = (handler) => [
     handler: handler.putProductByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_EDIT_PRODUCT"],
+        rbac: {
+          permission: ["UPDATE_PRODUCT"],
         },
       },
     },
@@ -53,8 +53,8 @@ const routes = (handler) => [
     handler: handler.deleteProductByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_DELETE_PRODUCT"],
+        rbac: {
+          permission: ["DELETE_PRODUCT"],
         },
       },
     },
@@ -65,8 +65,8 @@ const routes = (handler) => [
     handler: handler.editStockHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_EDIT_PRODUCT"],
+        rbac: {
+          permission: ["UPDATE_PRODUCT"],
         },
       },
     },
@@ -77,8 +77,8 @@ const routes = (handler) => [
     handler: handler.editPriceHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CAN_EDIT_PRODUCT"],
+        rbac: {
+          permission: ["UPDATE_PRODUCT"],
         },
       },
     },

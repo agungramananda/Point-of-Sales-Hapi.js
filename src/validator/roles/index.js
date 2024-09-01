@@ -1,32 +1,29 @@
 const InvariantError = require("../../exceptions/InvariantError");
 const {
-  UsersPayloadSchema,
-  UsersParamsSchema,
-  UsersQuerySchema,
+  RolesPayloadSchema,
+  RolesParamsSchema,
+  RolesQuerySchema,
 } = require("./schema");
 
-const UsersValidator = {
-  validateUsersPayload: (payload) => {
-    const validationResult = UsersPayloadSchema.validate(payload);
-
+const RolesValidator = {
+  validateRolePayload: (payload) => {
+    const validationResult = RolesPayloadSchema.validate(payload);
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }
   },
-  validateUsersParams: (params) => {
-    const validationResult = UsersParamsSchema.validate(params);
-
+  validateRoleParams: (params) => {
+    const validationResult = RolesParamsSchema.validate(params);
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }
   },
-  validateUsersQuery: (query) => {
-    const validationResult = UsersQuerySchema.validate(query);
-
+  validateRoleQuery: (query) => {
+    const validationResult = RolesQuerySchema.validate(query);
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);
     }
   },
 };
 
-module.exports = UsersValidator;
+module.exports = RolesValidator;

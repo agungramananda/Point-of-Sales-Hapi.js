@@ -5,6 +5,7 @@ const NotFoundError = require("../../exceptions/NotFoundError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { searchName } = require("../../utils/searchName");
 const { filterQuery } = require("../../utils/filterQuery");
+const AuthenticationError = require("../../exceptions/AuthenticationError");
 
 class UserService {
   constructor() {
@@ -22,7 +23,7 @@ class UserService {
     query = searchName({ keyword: name }, "users u", "u.name", query);
     query = await filterQuery({ keyword: role }, "roles r", "r.role", query);
     const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, "users");
+    const infoPage = await getMaxPage(p, query);
     const sql = {
       text: `${query} LIMIT $1 OFFSET $2`,
       values: [p.limit, p.offset],
@@ -159,7 +160,7 @@ class UserService {
       FROM users u
       LEFT JOIN
       roles r on u.role_id = r.id
-      WHERE username = $1 AND deleted_at IS NULL AND status = 1`,
+      WHERE username = $1 AND u.deleted_at IS NULL AND status = 1`,
       values: [username],
     };
 
@@ -167,7 +168,7 @@ class UserService {
       const result = await this._pool.query(query);
 
       if (!result.rows[0]) {
-        throw new InvariantError("Username salah");
+        throw new AuthenticationError("Username salah");
       }
 
       const { id, password: hashedPassword, role } = result.rows[0];
@@ -175,12 +176,12 @@ class UserService {
       const isMatch = await bcrypt.compare(password, hashedPassword);
 
       if (!isMatch) {
-        throw new InvariantError("Password salah");
+        throw new AuthenticationError("Password salah");
       }
 
       return { id, role };
     } catch (error) {
-      throw new InvariantError(error.message);
+      throw new AuthenticationError(error.message);
     }
   }
 }

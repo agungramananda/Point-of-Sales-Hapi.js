@@ -9,17 +9,19 @@ class SuppliersHandler {
   }
 
   async getSuppliersHandler(request, h) {
+    this._validator.validateSupplierQuery(request.query);
     const { name, page, limit } = request.query;
-    const allSupplier = await this._service.getAllSuppliers({
+    const { data, infoPage } = await this._service.getAllSuppliers({
       name,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
     });
 
     return h
       .response({
         status: "success",
-        data: allSupplier,
+        data,
+        infoPage,
       })
       .code(200);
   }

@@ -9,12 +9,11 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("roles", {
-    id: "id",
-    role: {
-      type: "VARCHAR(50)",
+  pgm.addColumn("members", {
+    membership_id: {
+      type: "INTEGER",
+      references: "membership_categories",
       notNull: true,
-      unique: true,
     },
   });
 };
@@ -25,5 +24,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("roles");
+  pgm.dropColumn("members", "membership_id");
 };

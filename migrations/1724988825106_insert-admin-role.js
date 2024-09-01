@@ -8,15 +8,11 @@ exports.shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-exports.up = (pgm) => {
-  pgm.createTable("roles", {
-    id: "id",
-    role: {
-      type: "VARCHAR(50)",
-      notNull: true,
-      unique: true,
-    },
-  });
+exports.up = async (pgm) => {
+  pgm.sql("insert into roles (role) values('Admin')");
+  pgm.sql(
+    "insert into role_permissions (role_id, permission_id) select 1, id from permissions"
+  );
 };
 
 /**
@@ -25,5 +21,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("roles");
+  pgm.sql("delete from role_permissions where role_id = '1'");
+  pgm.sql("delete from roles where role = 'Admin'");
 };

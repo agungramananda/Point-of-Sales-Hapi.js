@@ -9,25 +9,37 @@ const pagination = ({ limit, page }) => {
   return { limit, page, offset };
 };
 
-const getMaxPage = async ({ limit, page }, table) => {
+const getMaxPage = async ({ limit, page }, query) => {
   const pool = new Pool();
   try {
-    const result = await pool.query(`SELECT COUNT(*) AS total FROM ${table}`);
-    if (result.rows.length === 0) {
-      throw new InvariantError("Data tidak ditemukan");
+    const result = await pool.query(
+      `SELECT COUNT(*) AS total FROM (${query}) AS total_query`
+    );
+
+    const totalItems = parseInt(result.rows[0].total, 10);
+    const maxPage = Math.ceil(totalItems / limit);
+
+    if (totalItems === 0) {
+      return {
+        currentPage: 1,
+        totalItems: 0,
+        totalPages: 1,
+      };
     }
-    const maxPage = Math.ceil(result.rows[0].total / limit);
+
     if (maxPage >= page) {
       return {
         currentPage: page,
-        totalItems: result.rows[0].total,
+        totalItems: totalItems,
         totalPages: maxPage,
       };
     } else {
       throw new InvariantError(`Halaman hanya sampai ${maxPage}`);
     }
   } catch (error) {
-    throw new InvariantError(error.message);
+    throw new Error(error);
+  } finally {
+    await pool.end();
   }
 };
 

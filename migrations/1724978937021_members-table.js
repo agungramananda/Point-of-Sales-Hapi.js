@@ -9,31 +9,12 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("users", {
+  pgm.createTable("members", {
     id: "id",
-    username: {
-      type: "VARCHAR(255)",
-      notNull: true,
-    },
-    password: {
-      type: "VARCHAR(100)",
-      notNull: true,
-    },
-    name: {
-      type: "TEXT",
-      notNull: true,
-    },
-    status: {
-      type: "INT",
-      notNull: true,
-      default: 1,
-    },
-    role_id: {
-      type: "INT",
-      notNull: true,
-      references: "roles",
-      onDelete: "CASCADE",
-    },
+    name: { type: "varchar(100)", notNull: true },
+    email: { type: "varchar(100)", notNull: true },
+    phone: { type: "varchar(20)", notNull: true },
+    address: { type: "text", notNull: true },
     created_at: {
       type: "timestamp",
       notNull: true,
@@ -44,11 +25,7 @@ exports.up = (pgm) => {
       notNull: true,
       default: pgm.func("current_timestamp"),
     },
-    deleted_at: {
-      type: "timestamp",
-      notNull: false,
-      default: null,
-    },
+    deleted_at: { type: "timestamp", notNull: false },
   });
 };
 
@@ -58,5 +35,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("users");
+  pgm.dropTable("members");
 };

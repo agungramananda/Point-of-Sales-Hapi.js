@@ -11,7 +11,6 @@
   "author": "Agung Ramananda",
   "license": "ISC",
   "dependencies": {
-    "@antoniogiordano/hacli": "^1.0.2",
     "@hapi/hapi": "^21.3.10",
     "@hapi/jwt": "^3.2.0",
     "auto-bind": "^4.0.0",

@@ -18,4 +18,15 @@ const TransactionsPayloadSchema = Joi.object({
   payment: Joi.number().integer().required(),
 });
 
-module.exports = { TransactionsParamsSchema, TransactionsPayloadSchema };
+const TransactionsQuerySchema = Joi.object({
+  startDate: Joi.date().allow(""),
+  endDate: Joi.date().allow(""),
+  page: Joi.number().integer().default(1),
+  limit: Joi.number().integer().default(25),
+});
+
+module.exports = {
+  TransactionsParamsSchema,
+  TransactionsPayloadSchema,
+  TransactionsQuerySchema,
+};

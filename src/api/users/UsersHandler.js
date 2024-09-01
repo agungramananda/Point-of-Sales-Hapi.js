@@ -9,20 +9,20 @@ class UsersHandler {
   }
 
   async getUsersHandler(request, h) {
+    this._validator.validateUsersQuery(request.query);
     const { name, role, page, limit } = request.query;
-    const users = await this._service.getUsers({
+    const { data, infoPage } = await this._service.getUsers({
       name,
       role,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
     });
 
     return h
       .response({
         status: "success",
-        data: {
-          users,
-        },
+        data,
+        infoPage,
       })
       .code(200);
   }

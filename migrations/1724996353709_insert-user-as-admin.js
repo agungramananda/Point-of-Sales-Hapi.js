@@ -1,3 +1,4 @@
+const bcrypt = require("bcrypt");
 /**
  * @type {import('node-pg-migrate').ColumnDefinitions | undefined}
  */
@@ -8,12 +9,13 @@ exports.shorthands = undefined;
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-exports.up = (pgm) => {
-  pgm.alterColumn("purchase", "deleted_at", {
-    type: "timestamp",
-    notNull: false,
-    default: null,
-  });
+exports.up = async (pgm) => {
+  const hashedPassword = await bcrypt.hash("admin123", 10);
+
+  pgm.db.query(
+    "insert into users (username, password, name, role_id) values('admin1', $1, 'Ucup', 1)",
+    [hashedPassword]
+  );
 };
 
 /**
@@ -21,4 +23,6 @@ exports.up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-exports.down = (pgm) => {};
+exports.down = (pgm) => {
+  pgm.sql("delete from users where username = 'admin1'");
+};

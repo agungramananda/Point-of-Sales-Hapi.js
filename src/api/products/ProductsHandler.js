@@ -17,16 +17,15 @@ class ProductsHandler {
       sortBy,
       category,
       name,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
     });
 
     return h
       .response({
         status: "success",
-        data: {
-          products,
-        },
+        data: products.data,
+        infoPage: products.infoPage,
       })
       .code(200);
   }

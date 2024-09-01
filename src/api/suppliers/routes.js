@@ -5,8 +5,8 @@ const routes = (handler) => [
     handler: handler.getSuppliersHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_SUPPLIER"],
+        rbac: {
+          permission: ["READ_SUPPLIER"],
         },
       },
     },
@@ -17,8 +17,8 @@ const routes = (handler) => [
     handler: handler.getSupplierByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_SUPPLIER"],
+        rbac: {
+          permission: ["READ_SUPPLIER"],
         },
       },
     },
@@ -29,8 +29,8 @@ const routes = (handler) => [
     handler: handler.postSupplierHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_SUPPLIER"],
+        rbac: {
+          permission: ["CREATE_SUPPLIER"],
         },
       },
     },
@@ -41,8 +41,8 @@ const routes = (handler) => [
     handler: handler.putSupplierByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_SUPPLIER"],
+        rbac: {
+          permission: ["UPDATE_SUPPLIER"],
         },
       },
     },
@@ -53,8 +53,8 @@ const routes = (handler) => [
     handler: handler.deleteSupplierByIDHandler,
     config: {
       plugins: {
-        hacli: {
-          permissions: ["CRUD_SUPPLIER"],
+        rbac: {
+          permission: ["DELETE_SUPPLIER"],
         },
       },
     },

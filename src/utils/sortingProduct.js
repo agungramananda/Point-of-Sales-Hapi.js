@@ -2,6 +2,9 @@ const sortingProduct = ({ orderBy, sortBy }, sql) => {
   if (orderBy == null && sortBy == null) {
     return sql;
   }
+  if (!sortBy) {
+    sortBy = "ASC";
+  }
   let sort = sortBy.toUpperCase();
 
   if (orderBy == "name") {

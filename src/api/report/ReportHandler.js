@@ -9,29 +9,14 @@ class ReportHandler {
   }
 
   async getSalesReportHandler(request, h) {
-    const { start, end, page, limit } = request.query;
-
-    const startDate = new Date(start);
-
-    startDate.setDate(startDate.getDate() + -1);
-
-    let endDate;
-
-    if (!end) {
-      endDate = new Date();
-    } else {
-      endDate = new Date(end);
-    }
-
-    endDate.setDate(endDate.getDate() + 1);
-
-    this._validator.validateSalesReportQuery({ startDate, endDate });
+    this._validator.validateSalesReportQuery(request.query);
+    let { startDate, endDate, page, limit } = request.query;
 
     const report = await this._service.getSalesReport({
       startDate,
       endDate,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page,
+      limit,
     });
 
     return h
@@ -45,15 +30,13 @@ class ReportHandler {
   }
 
   async getPurchaseReportHandler(request, h) {
-    const { date, page, limit } = request.query;
-
-    const purchase_date = new Date(date);
-    this._validator.validatePurchaseReportQuery({ purchase_date });
-
+    this._validator.validatePurchaseReportQuery(request.query);
+    const { startDate, endDate, page, limit } = request.query;
     const report = await this._service.getPurchaseReport({
-      purchase_date,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      startDate,
+      endDate,
+      page,
+      limit,
     });
 
     return h
