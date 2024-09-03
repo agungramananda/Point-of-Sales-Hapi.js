@@ -37,6 +37,10 @@ const roles = require("./api/roles");
 const RolesValidator = require("./validator/roles");
 const RolesService = require("./services/postgres/RolesService");
 
+const discount = require("./api/discount");
+const DiscountService = require("./services/postgres/DiscountService");
+const DiscountValidator = require("./validator/discount");
+
 const auth = require("./api/auth");
 const AuthValidator = require("./validator/auth");
 const AuthService = require("./services/postgres/AuthService");
@@ -53,6 +57,7 @@ const init = async () => {
   const authService = new AuthService();
   const reportService = new ReportService();
   const rolesService = new RolesService();
+  const discountService = new DiscountService();
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -197,6 +202,13 @@ const init = async () => {
       options: {
         service: rolesService,
         validator: RolesValidator,
+      },
+    },
+    {
+      plugin: discount,
+      options: {
+        service: discountService,
+        validator: DiscountValidator,
       },
     },
   ]);

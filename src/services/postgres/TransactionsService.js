@@ -3,6 +3,7 @@ const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { beetwenDate } = require("../../utils/betweenDate");
+const calculatePercentageDiscount = require("../../utils/calculatePercentageDiscount");
 
 class TransactionsService {
   constructor() {
@@ -10,7 +11,9 @@ class TransactionsService {
   }
 
   async getTransactions({ startDate, endDate, page, limit }) {
-    let query = `SELECT * FROM transactions WHERE created_at IS NOT NULL`;
+    let query = `select
+    t.id, t.user_id, t.total_items , t.subtotal , t.total_discount , t.total_price , t.payment , t."change" , t.created_at as transaction_date
+    from transactions t where t.created_at is not null`;
     query = beetwenDate(startDate, endDate, "created_at", query);
     const p = pagination({ limit, page });
     const infoPage = await getMaxPage(p, query);
@@ -29,11 +32,9 @@ class TransactionsService {
   async getTransactionDetails(id) {
     const query = {
       text: `
-      SELECT
-      t.transaction_id, t.product_id, p.product_name, t.quantity, t.total_price
-      FROM transaction_details t 
-      LEFT JOIN
-      products p ON t.product_id = p.id
+      select 
+      td.transaction_id ,td.product_id , td.product_price , td.quantity , td.subtotal , td.total_discount , td.total_price 
+      from transaction_details td 
       WHERE transaction_id = $1`,
       values: [id],
     };
@@ -51,7 +52,8 @@ class TransactionsService {
   }
 
   async addTransaction({ user_id, items, payment }) {
-    //items = [{product_id, product_price, quantity, total_price}]
+    //items = [{product_id, quantity}]
+    const products = [];
     const verifyUser = {
       text: "SELECT id FROM users WHERE id = $1 AND status = 1 AND deleted_at IS NULL",
       values: [user_id],
@@ -96,12 +98,71 @@ class TransactionsService {
         }
       }
 
-      const total_items = items.reduce((acc, curr) => acc + curr.quantity, 0);
+      for (const item of items) {
+        const productQuery = {
+          text: `
+          select p.id, p.price, array_agg(pd.discount_id) as discount_list 
+          from products p 
+          left join product_discount pd on p.id = pd.product_id 
+          where p.id = $1
+          group by p.id
+          `,
+          values: [item.product_id],
+        };
+        const result = await this._pool.query(productQuery);
+        const { id, price, discount_list } = result.rows[0];
 
-      const total_price = items.reduce(
-        (acc, curr) => acc + curr.product_price * curr.quantity,
-        0
-      );
+        let total_discount = 0;
+        let subtotal = 0;
+        let total_price = 0;
+        if (discount_list.length > 0) {
+          for (const discount_id of discount_list) {
+            const discountQuery = {
+              text: `
+              select d.discount_value, dt.type_name as discount_type
+              from discount d 
+              left join discount_type dt on d.discount_type_id = dt.id 
+              where d.id = $1
+              `,
+              values: [discount_id],
+            };
+            const discount = await this._pool.query(discountQuery);
+            if (discount.rows[0].discount_type == "Percentage") {
+              total_discount += calculatePercentageDiscount(
+                price,
+                discount.rows[0].discount_value
+              );
+            } else {
+              total_discount += discount.rows[0].discount_value;
+            }
+          }
+          subtotal = price * item.quantity;
+          total_price = subtotal - total_discount;
+          if (total_price < 0) {
+            total_discount = before_discount;
+            total_price = 0;
+          }
+        }
+        products.push({
+          product_id: id,
+          product_price: price,
+          quantity: item.quantity,
+          subtotal_product: price * item.quantity,
+          total_product_discount: total_discount,
+          total_product_price: total_price,
+        });
+      }
+
+      let total_price = 0;
+      let total_items = 0;
+      let total_discount = 0;
+      let subtotal = 0;
+      for (const product of products) {
+        total_price += product.total_product_price;
+        total_items += product.quantity;
+        total_discount += product.total_product_discount;
+        subtotal += product.subtotal_product;
+      }
 
       if (payment < total_price) {
         throw new InvariantError("Uang yang diberikan customer tidak cukup");
@@ -111,32 +172,42 @@ class TransactionsService {
 
       const transactionsQuery = {
         text: `
-        INSERT INTO transactions (user_id, total_items, total_price, payment, change)
-        VALUES ($1,$2,$3,$4,$5) RETURNING id
+        INSERT INTO transactions (user_id, total_items, subtotal, total_discount,total_price, payment, change)
+        VALUES ($1,$2,$3,$4,$5, $6, $7) RETURNING id
         `,
-        values: [user_id, total_items, total_price, payment, change],
+        values: [
+          user_id,
+          total_items,
+          subtotal,
+          total_discount,
+          total_price,
+          payment,
+          change,
+        ],
       };
 
       const transactionResult = await this._pool.query(transactionsQuery);
 
       const transaction_id = parseInt(transactionResult.rows[0].id);
 
-      for (const item of items) {
-        const detailQuery = {
+      for (const product of products) {
+        const transactionDetailQuery = {
           text: `
-          INSERT INTO transaction_details (transaction_id, product_id, product_price, quantity, total_price)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO transaction_details 
+          (transaction_id, product_id, product_price, quantity, total_price, subtotal, total_discount)
+          VALUES ($1,$2,$3,$4, $5,$6,$7)
           `,
           values: [
             transaction_id,
-            item.product_id,
-            item.product_price,
-            item.quantity,
-            item.product_price * item.quantity,
+            product.product_id,
+            product.product_price,
+            product.quantity,
+            product.total_product_price,
+            product.subtotal_product,
+            product.total_product_discount,
           ],
         };
-
-        await this._pool.query(detailQuery);
+        await this._pool.query(transactionDetailQuery);
       }
 
       await this._pool.query("COMMIT");

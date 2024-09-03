@@ -56,7 +56,7 @@ class TransactionsHandler {
     return h
       .response({
         status: "success",
-        message: "Product berhasil ditambahkan",
+        message: "Transaksi berhasil ditambahkan",
         data: {
           newTransaction,
         },

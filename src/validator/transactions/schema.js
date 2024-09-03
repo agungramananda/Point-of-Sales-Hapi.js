@@ -10,7 +10,6 @@ const TransactionsPayloadSchema = Joi.object({
     .items(
       Joi.object({
         product_id: Joi.number().integer().required(),
-        product_price: Joi.number().integer().required(),
         quantity: Joi.number().integer().required(),
       })
     )

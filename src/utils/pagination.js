@@ -22,6 +22,7 @@ const getMaxPage = async ({ limit, page }, query) => {
     if (totalItems === 0) {
       return {
         currentPage: 1,
+        limit: limit,
         totalItems: 0,
         totalPages: 1,
       };
@@ -30,6 +31,7 @@ const getMaxPage = async ({ limit, page }, query) => {
     if (maxPage >= page) {
       return {
         currentPage: page,
+        limit: limit,
         totalItems: totalItems,
         totalPages: maxPage,
       };
