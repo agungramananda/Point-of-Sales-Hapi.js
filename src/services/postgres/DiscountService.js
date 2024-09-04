@@ -125,7 +125,7 @@ class DiscountService {
 
       if (discount_type_id == 2 && discount_value % 100 != 0) {
         throw new InvariantError(
-          "Gagal menambahkan discount. Discount value untuk tidak boleh ada puluhan atau satuan"
+          "Gagal menambahkan discount. Discount value tidak boleh ada puluhan atau satuan"
         );
       }
       const result = await this._pool.query(query);

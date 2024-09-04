@@ -6,6 +6,7 @@ const TransactionsParamsSchema = Joi.object({
 
 const TransactionsPayloadSchema = Joi.object({
   user_id: Joi.number().integer().required(),
+  customer_id: Joi.number().integer().optional().allow(null),
   items: Joi.array()
     .items(
       Joi.object({

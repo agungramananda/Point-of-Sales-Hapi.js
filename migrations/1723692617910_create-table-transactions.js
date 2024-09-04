@@ -15,7 +15,7 @@ exports.up = (pgm) => {
       type: "INT",
       notNull: true,
       references: '"users"',
-      onDelete: "RESTRICT",
+      onDelete: "CASCADE",
     },
     total_items: {
       type: "INT",

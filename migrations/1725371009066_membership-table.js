@@ -9,12 +9,24 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("members", {
+  pgm.createTable("membership", {
     id: "id",
-    name: { type: "varchar(100)", notNull: true },
-    email: { type: "varchar(100)", notNull: true },
-    phone: { type: "varchar(20)", notNull: true },
-    address: { type: "text", notNull: true },
+    membership_category: {
+      type: "varchar(100)",
+      notNull: true,
+    },
+    price: {
+      type: "int",
+      notNull: true,
+    },
+    percentage_discount: {
+      type: "int",
+      notNull: true,
+    },
+    duration: {
+      type: "int",
+      notNull: true,
+    },
     created_at: {
       type: "timestamp",
       notNull: true,
@@ -25,7 +37,7 @@ exports.up = (pgm) => {
       notNull: true,
       default: pgm.func("current_timestamp"),
     },
-    deleted_at: { type: "timestamp", notNull: false },
+    deleted_at: { type: "timestamp" },
   });
 };
 
@@ -35,5 +47,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("members");
+  pgm.dropTable("membership");
 };

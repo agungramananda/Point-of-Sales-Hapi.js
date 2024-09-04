@@ -45,10 +45,11 @@ class TransactionsHandler {
 
   async postTransactionHandler(request, h) {
     this._validator.validateTransactionsPayload(request.payload);
-    const { user_id, items, payment } = request.payload;
+    const { customer_id, user_id, items, payment } = request.payload;
 
     const newTransaction = await this._service.addTransaction({
       user_id,
+      customer_id,
       items,
       payment,
     });

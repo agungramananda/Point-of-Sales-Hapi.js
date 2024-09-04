@@ -6,7 +6,10 @@ const { beetwenDate } = require("../../utils/betweenDate");
 const calculatePercentageDiscount = require("../../utils/calculatePercentageDiscount");
 
 class TransactionsService {
-  constructor() {
+  constructor(productsService, usersService, customersService) {
+    this._productsService = productsService;
+    this._usersService = usersService;
+    this._customersService = customersService;
     this._pool = new Pool();
   }
 
@@ -51,20 +54,12 @@ class TransactionsService {
     }
   }
 
-  async addTransaction({ user_id, items, payment }) {
+  async addTransaction({ user_id, customer_id, items, payment }) {
     //items = [{product_id, quantity}]
     const products = [];
-    const verifyUser = {
-      text: "SELECT id FROM users WHERE id = $1 AND status = 1 AND deleted_at IS NULL",
-      values: [user_id],
-    };
 
     try {
-      const userIsMatch = await this._pool.query(verifyUser);
-
-      if (!userIsMatch.rows[0]) {
-        throw new NotFoundError("User tidak ada");
-      }
+      await this._usersService.getUserByID(user_id);
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -73,6 +68,7 @@ class TransactionsService {
 
     try {
       for (const item of items) {
+        await this._productsService.getProductByID(item.product_id);
         const itemQuery = {
           text: `
           SELECT p.id, p.product_name, s.amount
@@ -84,12 +80,6 @@ class TransactionsService {
           values: [item.product_id],
         };
         const product = await this._pool.query(itemQuery);
-
-        if (!product.rows[0]) {
-          throw new NotFoundError(
-            `Product dengan nama ${product.rows[0].product_name} tidak ada`
-          );
-        }
 
         if (item.quantity > product.rows[0].amount) {
           throw new InvariantError(
@@ -136,13 +126,32 @@ class TransactionsService {
               total_discount += discount.rows[0].discount_value;
             }
           }
-          subtotal = price * item.quantity;
-          total_price = subtotal - total_discount;
-          if (total_price < 0) {
-            total_discount = before_discount;
-            total_price = 0;
-          }
+          total_discount = total_discount * item.quantity;
         }
+        if (customer_id !== null) {
+          await this._customersService.getCustomerById(customer_id);
+          const customerQuery = {
+            text: `
+            select  m.membership_category ,m.percentage_discount as member_discount
+            from customer c
+            left join membership m on c.membership_id = m.id
+            where c.id = $1 and c.deleted_at is null
+            `,
+            values: [customer_id],
+          };
+          const customer = await this._pool.query(customerQuery);
+          const member_discount =
+            calculatePercentageDiscount(
+              price,
+              customer.rows[0].member_discount
+            ) * item.quantity;
+          total_discount += member_discount;
+        }
+        subtotal = price * item.quantity;
+        if (total_discount > subtotal) {
+          total_discount = subtotal;
+        }
+        total_price = subtotal - total_discount;
         products.push({
           product_id: id,
           product_price: price,
@@ -157,6 +166,7 @@ class TransactionsService {
       let total_items = 0;
       let total_discount = 0;
       let subtotal = 0;
+
       for (const product of products) {
         total_price += product.total_product_price;
         total_items += product.quantity;
@@ -172,11 +182,12 @@ class TransactionsService {
 
       const transactionsQuery = {
         text: `
-        INSERT INTO transactions (user_id, total_items, subtotal, total_discount,total_price, payment, change)
-        VALUES ($1,$2,$3,$4,$5, $6, $7) RETURNING id
+        INSERT INTO transactions (user_id, customer_id, total_items, subtotal, total_discount,total_price, payment, change)
+        VALUES ($1,$2,$3,$4,$5, $6, $7, $8) RETURNING id
         `,
         values: [
           user_id,
+          customer_id,
           total_items,
           subtotal,
           total_discount,

@@ -14,7 +14,6 @@ exports.up = (pgm) => {
     role: {
       type: "VARCHAR(50)",
       notNull: true,
-      unique: true,
     },
   });
 };

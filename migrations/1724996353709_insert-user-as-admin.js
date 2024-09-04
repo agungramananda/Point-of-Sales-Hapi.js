@@ -13,7 +13,9 @@ exports.up = async (pgm) => {
   const hashedPassword = await bcrypt.hash("admin123", 10);
 
   pgm.db.query(
-    "insert into users (username, password, name, role_id) values('admin1', $1, 'Ucup', 1)",
+    `insert into users (username, password, name, role_id)
+     values('admin1', $1, 'Ucup', 
+     (select id from roles where role = 'Admin'))`,
     [hashedPassword]
   );
 };

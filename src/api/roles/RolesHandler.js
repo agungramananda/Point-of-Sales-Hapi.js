@@ -73,6 +73,7 @@ class RolesHandler {
     return h
       .response({
         status: "success",
+        message: "Role berhasil dihapus",
       })
       .code(200);
   }

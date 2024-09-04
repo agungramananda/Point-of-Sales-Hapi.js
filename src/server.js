@@ -41,6 +41,14 @@ const discount = require("./api/discount");
 const DiscountService = require("./services/postgres/DiscountService");
 const DiscountValidator = require("./validator/discount");
 
+const membership = require("./api/membership");
+const MembershipService = require("./services/postgres/MembershipService");
+const MembershipValidator = require("./validator/membership");
+
+const customers = require("./api/customer");
+const CustomerService = require("./services/postgres/CustomerService");
+const CustomersValidator = require("./validator/customer");
+
 const auth = require("./api/auth");
 const AuthValidator = require("./validator/auth");
 const AuthService = require("./services/postgres/AuthService");
@@ -51,13 +59,19 @@ const init = async () => {
   const categoriesService = new CategoriesService();
   const productsService = new ProductsService();
   const usersService = new UsersService();
-  const transactionsService = new TransactionsService();
   const supplierService = new SupplierService();
   const purchaseService = new PurchaseService();
   const authService = new AuthService();
   const reportService = new ReportService();
   const rolesService = new RolesService();
   const discountService = new DiscountService();
+  const membershipService = new MembershipService();
+  const customerService = new CustomerService();
+  const transactionsService = new TransactionsService(
+    productsService,
+    usersService,
+    customerService
+  );
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -209,6 +223,20 @@ const init = async () => {
       options: {
         service: discountService,
         validator: DiscountValidator,
+      },
+    },
+    {
+      plugin: membership,
+      options: {
+        service: membershipService,
+        validator: MembershipValidator,
+      },
+    },
+    {
+      plugin: customers,
+      options: {
+        service: customerService,
+        validator: CustomersValidator,
       },
     },
   ]);

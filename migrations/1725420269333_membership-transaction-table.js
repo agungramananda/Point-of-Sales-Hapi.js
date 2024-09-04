@@ -9,22 +9,44 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("membership_categories", {
+  pgm.createTable("membership_transaction", {
     id: "id",
-    membership_type: { type: "varchar(100)", notNull: true },
-    price: { type: "integer", notNull: true },
-    duration: { type: "integer", notNull: true },
+    user_id: {
+      type: "int",
+      notNull: true,
+      references: "users",
+    },
+    customer_id: {
+      type: "int",
+      notNull: true,
+      references: "customer",
+    },
+    membership_id: {
+      type: "int",
+      notNull: true,
+      references: "membership",
+    },
+    price: {
+      type: "int",
+      notNull: true,
+    },
+    start_date: {
+      type: "timestamp",
+      notNull: true,
+    },
+    end_date: {
+      type: "timestamp",
+      notNull: true,
+    },
+    note: {
+      type: "text",
+      notNull: true,
+    },
     created_at: {
       type: "timestamp",
       notNull: true,
       default: pgm.func("current_timestamp"),
     },
-    updated_at: {
-      type: "timestamp",
-      notNull: true,
-      default: pgm.func("current_timestamp"),
-    },
-    deleted_at: { type: "timestamp", notNull: false },
   });
 };
 
@@ -34,5 +56,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("membership_categories");
+  pgm.dropTable("membership_transaction");
 };

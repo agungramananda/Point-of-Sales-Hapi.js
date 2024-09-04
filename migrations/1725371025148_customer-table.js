@@ -9,30 +9,35 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("transaction_details", {
+  pgm.createTable("customer", {
     id: "id",
-    transaction_id: {
-      type: "INT",
-      notNull: true,
-      references: '"transactions"',
-      onDelete: "CASCADE",
-    },
-    product_id: {
-      type: "INT",
-      notNull: true,
-      references: '"products"',
-      onDelete: "CASCADE",
-    },
-    product_price: {
-      type: "INT",
+    name: {
+      type: "varchar(100)",
       notNull: true,
     },
-    quantity: {
-      type: "INT",
+    email: {
+      type: "varchar(100)",
       notNull: true,
     },
-    total_price: {
-      type: "INT",
+    phone_number: {
+      type: "varchar(100)",
+      notNull: true,
+    },
+    address: {
+      type: "text",
+      notNull: true,
+    },
+    membership_id: {
+      type: "int",
+      notNull: true,
+      references: "membership",
+    },
+    start_date: {
+      type: "timestamp",
+      notNull: true,
+    },
+    end_date: {
+      type: "timestamp",
       notNull: true,
     },
     created_at: {
@@ -40,6 +45,12 @@ exports.up = (pgm) => {
       notNull: true,
       default: pgm.func("current_timestamp"),
     },
+    updated_at: {
+      type: "timestamp",
+      notNull: true,
+      default: pgm.func("current_timestamp"),
+    },
+    deleted_at: { type: "timestamp" },
   });
 };
 
@@ -49,5 +60,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("transaction_details");
+  pgm.dropTable("customer");
 };

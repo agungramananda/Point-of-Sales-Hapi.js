@@ -10,11 +10,10 @@ exports.shorthands = undefined;
  */
 exports.up = (pgm) => {
   pgm.addColumn("transactions", {
-    member_id: {
-      type: "integer",
+    customer_id: {
+      type: "int",
       notNull: false,
-      references: "members",
-      onDelete: "CASCADE",
+      references: "customer",
     },
   });
 };
@@ -25,5 +24,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropColumn("transactions", "member_id");
+  pgm.dropColumns("transactions", ["customer_id"]);
 };

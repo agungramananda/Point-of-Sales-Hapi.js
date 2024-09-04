@@ -170,6 +170,13 @@ class RolesService {
 
   async deleteRole(id) {
     try {
+      const check = await this._pool.query(
+        "SELECT id FROM roles WHERE id = $1 AND deleted_at is not null",
+        [id]
+      );
+      if (check.rows.length !== 0) {
+        throw new InvariantError("Role tidak ditemukan");
+      }
       const deletedRole = await this._pool.query(
         "UPDATE roles SET deleted_at = current_timestamp WHERE id = $1 and deleted_at is null",
         [id]
