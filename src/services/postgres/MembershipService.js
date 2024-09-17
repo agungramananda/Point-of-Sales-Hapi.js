@@ -192,6 +192,40 @@ class MembershipService {
       throw new InvariantError(error.message);
     }
   }
+
+  async updateMembershipLevel(customerId) {
+    try {
+      const query = {
+        text: `SELECT points FROM customer WHERE id = $1 and deleted_at is null`,
+        values: [customerId],
+      };
+      const result = await this.pool.query(query);
+      if (!result.rows.length) {
+        throw new NotFoundError("Customer tidak ditemukan");
+      }
+      const points = result.rows[0].points;
+      const membership = await this.pool.query(
+        `SELECT id, level, min_point FROM membership WHERE $1 >= min_point and deleted_at is null ORDER BY level DESC LIMIT 1`,
+        [points]
+      );
+      if (!membership.rows.length) {
+        return;
+      }
+      const membershipId = membership.rows[0].id;
+      const level = membership.rows[0].level;
+      const queryUpdate = {
+        text: `UPDATE customer SET membership_id = $1 WHERE id = $2 and deleted_at is null`,
+        values: [membershipId, customerId],
+      };
+      await this.pool.query(queryUpdate);
+      return level;
+    } catch (error) {
+      if (error.name == "NotFoundError") {
+        throw error;
+      }
+      throw new InvariantError(error.message);
+    }
+  }
 }
 
 module.exports = MembershipService;
