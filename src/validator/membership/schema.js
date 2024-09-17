@@ -8,9 +8,8 @@ const MembershipQuerySchema = Joi.object({
 
 const MembershipPayloadSchema = Joi.object({
   membership_category: Joi.string().required(),
-  price: Joi.number().required(),
-  duration: Joi.number().required(),
-  percentage_discount: Joi.number().required(),
+  level: Joi.number().required(),
+  min_point: Joi.number().required(),
 });
 
 const MembershipParamsSchema = Joi.object({

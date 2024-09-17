@@ -40,7 +40,6 @@ class DiscountHandler {
     this._validator.validateDiscountPayload(request.payload);
     const {
       discount_code,
-      discount_value,
       discount_type_id,
       start_date,
       end_date,
@@ -49,7 +48,6 @@ class DiscountHandler {
     } = request.payload;
     const discountId = await this._service.addDiscount({
       discount_code,
-      discount_value,
       discount_type_id,
       start_date,
       end_date,

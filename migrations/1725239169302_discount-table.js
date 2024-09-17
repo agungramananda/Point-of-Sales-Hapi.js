@@ -32,7 +32,6 @@ exports.up = (pgm) => {
   pgm.createTable("discount", {
     id: "id",
     discount_code: { type: "varchar(1000)", notNull: true },
-    discount_value: { type: "int", notNull: true },
     discount_type_id: {
       type: "int",
       notNull: true,

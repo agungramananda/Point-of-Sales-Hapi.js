@@ -27,18 +27,14 @@ exports.up = (pgm) => {
       type: "text",
       notNull: true,
     },
+    points: {
+      type: "int",
+      notNull: true,
+    },
     membership_id: {
       type: "int",
       notNull: true,
       references: "membership",
-    },
-    start_date: {
-      type: "timestamp",
-      notNull: true,
-    },
-    end_date: {
-      type: "timestamp",
-      notNull: true,
     },
     created_at: {
       type: "timestamp",

@@ -8,7 +8,6 @@ const ProductsPayloadSchema = Joi.object({
   product_name: Joi.string().required(),
   price: Joi.number().integer().required(),
   category_id: Joi.number().integer().required(),
-  amount: Joi.number().integer().required(),
 });
 
 const ProductsEditStockSchema = Joi.object({

@@ -15,15 +15,11 @@ exports.up = (pgm) => {
       type: "varchar(100)",
       notNull: true,
     },
-    price: {
+    level: {
       type: "int",
       notNull: true,
     },
-    percentage_discount: {
-      type: "int",
-      notNull: true,
-    },
-    duration: {
+    min_point: {
       type: "int",
       notNull: true,
     },

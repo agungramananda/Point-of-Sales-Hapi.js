@@ -13,7 +13,7 @@ class CustmoerService {
     try {
       let query = `
       select 
-      c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.start_date as join_date, c.end_date as membership_expired
+      c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.points, c.created_at as join_date
       from customer c
       left join membership m on c.membership_id = m.id
       where c.deleted_at is null
@@ -39,7 +39,7 @@ class CustmoerService {
       const query = {
         text: `
       select 
-      c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.start_date as join_date, c.end_date as membership_expired
+      c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.points, c.created_at as join_date
       from customer c
       left join membership m on c.membership_id = m.id
       where c.deleted_at is null and c.id = $1`,
@@ -58,23 +58,9 @@ class CustmoerService {
     }
   }
 
-  async addCustomer({
-    user_id,
-    name,
-    email,
-    phone_number,
-    address,
-    membership_id,
-  }) {
+  async addCustomer({ name, email, phone_number, address, membership_id }) {
     await this._pool.query("BEGIN");
     try {
-      const checkUser = await this._pool.query(
-        `SELECT id FROM users WHERE id = $1 and status = 1 and deleted_at is null`,
-        [user_id]
-      );
-      if (checkUser.rows.length === 0) {
-        throw new InvariantError(`User dengan id ${user_id} tidak ditemukan`);
-      }
       const checkCustomer = await this._pool.query(
         `SELECT id FROM customer WHERE email = $1 and deleted_at is null`,
         [email]
@@ -85,48 +71,22 @@ class CustmoerService {
         );
       }
       const membership = await this._pool.query(
-        `SELECT duration, price from membership where id = $1`,
+        `SELECT id from membership where id = $1`,
         [membership_id]
       );
 
       if (membership.rows.length === 0) {
         throw new InvariantError("Membership tidak ditemukan");
       }
-      const duration = membership.rows[0].duration;
-      const price = membership.rows[0].price;
-      const start_date = new Date();
-      const end_date = new Date();
-      end_date.setDate(start_date.getDate() + duration);
-      const note = "Membership Baru";
+      const points = 0;
       const query = {
-        text: `INSERT INTO customer (name,email,phone_number,address,membership_id,start_date,end_date) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, email, phone_number, address, membership_id, start_date, end_date`,
-        values: [
-          name,
-          email,
-          phone_number,
-          address,
-          membership_id,
-          start_date,
-          end_date,
-        ],
+        text: `INSERT INTO customer (name,email,phone_number,address,membership_id,points) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, phone_number, address, membership_id, points`,
+        values: [name, email, phone_number, address, membership_id, points],
       };
       const result = await this._pool.query(query);
-      const insertTransaction = await this._pool.query(
-        `insert into membership_transaction (user_id, membership_id, customer_id, start_date, end_date, note, price) values ($1, $2, $3, $4, $5,$6, $7) RETURNING id, user_id, membership_id, customer_id, start_date, end_date, note, price`,
-        [
-          user_id,
-          membership_id,
-          result.rows[0].id,
-          start_date,
-          end_date,
-          note,
-          price,
-        ]
-      );
       await this._pool.query("COMMIT");
       return {
         newCustomer: result.rows[0],
-        invoice: insertTransaction.rows[0],
       };
     } catch (error) {
       await this._pool.query("ROLLBACK");
@@ -187,69 +147,6 @@ class CustmoerService {
         throw new NotFoundError("Customer tidak ditemukan");
       }
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-      throw new InvariantError(error.message);
-    }
-  }
-
-  async extendMembership(id, { user_id, membership_id }) {
-    await this._pool.query("BEGIN");
-    try {
-      const checkUser = await this._pool.query(
-        `SELECT id FROM users WHERE id = $1 and status = 1 and deleted_at is null`,
-        [user_id]
-      );
-      if (checkUser.rows.length === 0) {
-        throw new InvariantError(`User dengan id ${id} tidak ditemukan`);
-      }
-      const checkCustomer = await this._pool.query(
-        `SELECT id, membership_id, start_date,end_date FROM customer WHERE id = $1 and deleted_at is null`,
-        [id]
-      );
-      if (checkCustomer.rows.length === 0) {
-        throw new NotFoundError("Customer tidak ditemukan");
-      }
-      const checkMembership = await this._pool.query(
-        `SELECT duration, price from membership where id = $1`,
-        [membership_id]
-      );
-      if (checkMembership.rows.length === 0) {
-        throw new NotFoundError("Membership tidak ditemukan");
-      }
-      const duration = checkMembership.rows[0].duration;
-      const end_date = checkCustomer.rows[0].end_date;
-      end_date.setDate(end_date.getDate() + duration);
-      let note = "Perpanjangan Membership";
-      if (checkCustomer.rows[0].membership_id !== membership_id) {
-        note = "Penggantian Membership";
-      }
-      const query = {
-        text: `UPDATE customer SET membership_id = $1, end_date = $2 WHERE id = $3 and deleted_at is null RETURNING id,name,email,phone_number,address,membership_id,start_date,end_date`,
-        values: [membership_id, end_date, id],
-      };
-      const result = await this._pool.query(query);
-      const insertTransaction = await this._pool.query(
-        `insert into membership_transaction (user_id, membership_id, customer_id, price, start_date, end_date, note) values ($1, $2, $3, $4, $5,$6, $7) RETURNING *`,
-        [
-          user_id,
-          membership_id,
-          id,
-          checkMembership.rows[0].price,
-          checkCustomer.rows[0].start_date,
-          end_date,
-          note,
-        ]
-      );
-      await this._pool.query("COMMIT");
-      return {
-        customer: result.rows[0],
-        message: note,
-        invoice: insertTransaction.rows[0],
-      };
-    } catch (error) {
-      await this._pool.query("ROLLBACK");
       if (error instanceof NotFoundError) {
         throw error;
       }

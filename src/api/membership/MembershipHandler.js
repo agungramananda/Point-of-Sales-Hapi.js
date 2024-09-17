@@ -39,13 +39,11 @@ class MembershipHandler {
 
   async postMembershipHandler(request, h) {
     this._validator.validateMembershipPayload(request.payload);
-    const { membership_category, price, duration, percentage_discount } =
-      request.payload;
+    const { membership_category, level, min_point } = request.payload;
     const membershipId = await this._service.addMembership({
       membership_category,
-      price,
-      duration,
-      percentage_discount,
+      level,
+      min_point,
     });
     return h
       .response({
@@ -62,13 +60,11 @@ class MembershipHandler {
     this._validator.validateMembershipParams(request.params);
     this._validator.validateMembershipPayload(request.payload);
     const { id } = request.params;
-    const { membership_category, price, duration, percentage_discount } =
-      request.payload;
+    const { membership_category, level, min_point } = request.payload;
     await this._service.editMembership(id, {
       membership_category,
-      price,
-      duration,
-      percentage_discount,
+      level,
+      min_point,
     });
     return h
       .response({

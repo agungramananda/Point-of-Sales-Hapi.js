@@ -15,11 +15,17 @@ exports.up = (pgm) => {
       type: "int",
       notNull: true,
       references: "products",
+      onDelete: "CASCADE",
     },
     discount_id: {
       type: "int",
       notNull: true,
       references: "discount",
+      onDelete: "CASCADE",
+    },
+    discount_value: {
+      type: "int",
+      notNull: true,
     },
     created_at: {
       type: "timestamp",

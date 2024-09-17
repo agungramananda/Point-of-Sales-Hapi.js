@@ -82,10 +82,15 @@ class ProductsService {
     }
   }
 
-  async addProduct({ product_name, price, category_id, amount }) {
+  async addProduct({ product_name, price, category_id }) {
     const checkQuery = {
       text: "SELECT id FROM products WHERE product_name = $1 AND deleted_at IS NULL",
       values: [product_name],
+    };
+
+    const checkCategory = {
+      text: "SELECT id FROM categories WHERE id = $1",
+      values: [category_id],
     };
 
     try {
@@ -95,13 +100,15 @@ class ProductsService {
           `Product dengan nama ${product_name} sudah ada`
         );
       }
+      const isCategory = await this._pool.query(checkCategory);
+      if (isCategory.rows.length === 0) {
+        throw new NotFoundError("Category tidak ada");
+      }
     } catch (error) {
       throw new InvariantError(error.message);
     }
 
     try {
-      await this._pool.query("BEGIN");
-
       const productQuery = {
         text: `
           INSERT INTO products (product_name,price,category_id)
@@ -119,31 +126,24 @@ class ProductsService {
 
       const stockQuery = {
         text: `
-        INSERT INTO stock (product_id,amount)
-        VALUES ($1,$2)
-        RETURNING amount
+          INSERT INTO stock (product_id, amount)
+          VALUES ($1, $2)
+          RETURNING amount
         `,
-        values: [insertProduct.rows[0].id, amount],
+        values: [insertProduct.rows[0].id, 0],
       };
 
-      const insertStock = await this._pool.query(stockQuery);
+      await this._pool.query(stockQuery);
 
-      if (!insertStock.rows[0]) {
-        throw new InvariantError("Product gagal ditambahkan");
-      }
-
-      await this._pool.query("COMMIT");
-
-      const result = [{ ...insertProduct.rows[0], ...insertStock.rows[0] }];
+      const result = [{ ...insertProduct.rows[0] }];
 
       return result;
     } catch (error) {
-      await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);
     }
   }
 
-  async editProduct({ id, product_name, price, category_id, amount }) {
+  async editProduct({ id, product_name, price, category_id }) {
     const updated_at = new Date();
     const productQuery = {
       text: `
@@ -155,21 +155,15 @@ class ProductsService {
       values: [product_name, price, category_id, updated_at, id],
     };
 
-    const stockQuery = {
-      text: `
-      UPDATE stock
-      SET amount = $1
-      WHERE product_id = $2
-      RETURNING amount
-      `,
-      values: [amount, id],
-    };
-
     const checkQuery = {
       text: "SELECT id FROM products WHERE product_name = $1 AND deleted_at IS NULL AND id != $2",
       values: [product_name, id],
     };
 
+    const checkCategory = {
+      text: "SELECT id FROM categories WHERE id = $1",
+      values: [category_id],
+    };
     try {
       const isDuplicate = await this._pool.query(checkQuery);
       if (isDuplicate.rows[0]) {
@@ -177,32 +171,24 @@ class ProductsService {
           `Product dengan nama ${product_name} sudah ada`
         );
       }
+      const isCategory = await this._pool.query(checkCategory);
+      if (isCategory.rows.length === 0) {
+        throw new NotFoundError("Category tidak ada");
+      }
     } catch (error) {
       throw new InvariantError(error.message);
     }
 
     try {
-      await this._pool.query("BEGIN");
-
       const updateProduct = await this._pool.query(productQuery);
 
       if (!updateProduct.rows[0]) {
         throw new NotFoundError("Product tidak ada");
       }
-
-      const updateStock = await this._pool.query(stockQuery);
-
-      if (!updateStock.rows[0]) {
-        throw new NotFoundError("Product tidak ada");
-      }
-
-      await this._pool.query("COMMIT");
-
-      const result = [{ ...updateProduct.rows[0], ...updateStock.rows[0] }];
+      const result = [{ ...updateProduct.rows[0] }];
 
       return result;
     } catch (error) {
-      await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);
     }
   }

@@ -33,6 +33,13 @@ exports.up = (pgm) => {
       type: "bigint",
       notNull: true,
     },
+    expiry_date: {
+      type: "timestamp",
+    },
+    remaining_stock: {
+      type: "INT",
+      notNull: true,
+    },
     created_at: {
       type: "timestamp",
       notNull: true,

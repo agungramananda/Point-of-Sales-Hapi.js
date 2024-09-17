@@ -46,7 +46,7 @@ class PurchaseHandler {
   async postPurchaseHandler(request, h) {
     this._validator.validatePurchasePayload(request.payload);
 
-    const { supplier_id, product_id, quantity, price, total_price } =
+    const { supplier_id, product_id, quantity, price, expiry_date } =
       request.payload;
 
     const newPurchase = await this._service.addPurchase({
@@ -54,7 +54,7 @@ class PurchaseHandler {
       product_id,
       quantity,
       price,
-      total_price,
+      expiry_date,
     });
 
     return h.response({

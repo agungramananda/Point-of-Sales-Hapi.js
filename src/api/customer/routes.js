@@ -49,16 +49,6 @@ const routes = (handler) => [
       },
     },
   },
-  {
-    method: "PUT",
-    path: "/customer/{id}/extend",
-    handler: handler.extendMembershipHandler,
-    config: {
-      plugins: {
-        rbac: ["UPDATE_CUSTOMER"],
-      },
-    },
-  },
 ];
 
 module.exports = routes;

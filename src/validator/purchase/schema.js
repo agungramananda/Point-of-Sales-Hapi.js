@@ -9,7 +9,7 @@ const PurchasePayloadSchema = Joi.object({
   product_id: Joi.number().integer().required(),
   quantity: Joi.number().integer().required(),
   price: Joi.number().required(),
-  total_price: Joi.number().required(),
+  expiry_date: Joi.date().allow(null),
 });
 
 const PurchaseQuerySchema = Joi.object({

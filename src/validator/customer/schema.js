@@ -11,7 +11,6 @@ const CustomerParamsSchema = Joi.object({
 });
 
 const AddCustomerSchema = Joi.object({
-  user_id: Joi.number().required(),
   name: Joi.string().required(),
   email: Joi.string().email().required(),
   phone_number: Joi.string().required(),
@@ -26,15 +25,9 @@ const EditCustomerSchema = Joi.object({
   address: Joi.string().required(),
 });
 
-const ExtendMembershipSchema = Joi.object({
-  user_id: Joi.number().required(),
-  membership_id: Joi.number().required(),
-});
-
 module.exports = {
   CustomerQuerySchema,
   CustomerParamsSchema,
   AddCustomerSchema,
   EditCustomerSchema,
-  ExtendMembershipSchema,
 };

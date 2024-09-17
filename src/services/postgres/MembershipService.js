@@ -11,7 +11,7 @@ class MembershipService {
 
   async getMembership({ membership_category, page, limit }) {
     try {
-      let query = `SELECT m.id,m.membership_category,m.price,m.duration,m.percentage_discount from membership m where m.deleted_at is null`;
+      let query = `SELECT m.id,m.membership_category,m.level, m.min_point from membership m where m.deleted_at is null`;
       query = await searchName(
         { keyword: membership_category },
         "membership m",
@@ -32,7 +32,7 @@ class MembershipService {
   async getMembershipById(id) {
     try {
       const query = {
-        text: `SELECT m.id,m.membership_category,m.price,m.duration,m.percentage_discount from membership m where m.id = $1 and m.deleted_at is null`,
+        text: `SELECT m.id,m.membership_category,m.level, m.min_point from membership m where m.id = $1 and m.deleted_at is null`,
         values: [id],
       };
       const result = await this.pool.query(query);
@@ -48,27 +48,55 @@ class MembershipService {
     }
   }
 
-  async addMembership({
-    membership_category,
-    price,
-    duration,
-    percentage_discount,
-  }) {
-    if (percentage_discount > 100) {
-      throw new InvariantError("Persentase diskon tidak boleh lebih dari 100");
-    }
+  async addMembership({ membership_category, level, min_point }) {
     try {
       const query = {
-        text: `INSERT INTO membership (membership_category, price, duration, percentage_discount) VALUES ($1, $2, $3, $4) RETURNING id`,
-        values: [membership_category, price, duration, percentage_discount],
+        text: `INSERT INTO membership (membership_category, level, min_point) VALUES ($1, $2, $3) RETURNING id`,
+        values: [membership_category, level, min_point],
       };
       const checkMembership = await this.pool.query(
         `SELECT id FROM membership WHERE membership_category = $1 and deleted_at is null`,
         [membership_category]
       );
+      const checkLevel = await this.pool.query(
+        `SELECT id FROM membership WHERE level = $1 and deleted_at is null`,
+        [level]
+      );
+      if (checkLevel.rows.length > 0) {
+        throw new InvariantError("Level sudah ada untuk membership");
+      }
       if (checkMembership.rows.length > 0) {
         throw new InvariantError("Membership sudah terdaftar");
       }
+
+      const lowerLevel = await this.pool.query(
+        `SELECT min_point FROM membership WHERE level < $1 AND deleted_at is null ORDER BY level DESC LIMIT 1`,
+        [level]
+      );
+      const upperLevel = await this.pool.query(
+        `SELECT min_point FROM membership WHERE level > $1 AND deleted_at is null ORDER BY level ASC LIMIT 1`,
+        [level]
+      );
+
+      if (
+        lowerLevel.rows.length > 0 &&
+        min_point <= lowerLevel.rows[0].min_point
+      ) {
+        throw new InvariantError(
+          "min_point harus lebih besar dari level dibawahnya yaitu " +
+            lowerLevel.rows[0].min_point
+        );
+      }
+      if (
+        upperLevel.rows.length > 0 &&
+        min_point >= upperLevel.rows[0].min_point
+      ) {
+        throw new InvariantError(
+          "min_point harus lebih kecil dari level diatasnya yaitu " +
+            upperLevel.rows[0].min_point
+        );
+      }
+
       const result = await this.pool.query(query);
       if (!result.rows.length) {
         throw new InvariantError("Membership gagal ditambahkan");
@@ -79,21 +107,54 @@ class MembershipService {
     }
   }
 
-  async editMembership(
-    id,
-    { membership_category, price, duration, percentage_discount }
-  ) {
+  async editMembership(id, { membership_category, level, min_point }) {
     try {
       const checkMembership = await this.pool.query(
-        `SELECT id FROM membership WHERE id != $1 and deleted_at is null and membership_category = $2`,
+        `SELECT id FROM membership WHERE id != $1 and membership_category = $2 and deleted_at is null`,
         [id, membership_category]
       );
-      if (checkMembership.rows.length > 0) {
-        throw new NotFoundError("Membership sudah terdaftar");
+      const checkLevel = await this.pool.query(
+        `SELECT id FROM membership WHERE id != $1 and level = $2 and deleted_at is null`,
+        [id, level]
+      );
+      if (checkLevel.rows.length > 0) {
+        throw new InvariantError("Level sudah ada untuk membership");
       }
+      if (checkMembership.rows.length > 0) {
+        throw new InvariantError("Membership sudah terdaftar");
+      }
+
+      const lowerLevel = await this.pool.query(
+        `SELECT min_point FROM membership WHERE level < $1 AND deleted_at is null ORDER BY level DESC LIMIT 1`,
+        [level]
+      );
+      const upperLevel = await this.pool.query(
+        `SELECT min_point FROM membership WHERE level > $1 AND deleted_at is null ORDER BY level ASC LIMIT 1`,
+        [level]
+      );
+
+      if (
+        lowerLevel.rows.length > 0 &&
+        min_point <= lowerLevel.rows[0].min_point
+      ) {
+        throw new InvariantError(
+          "min_point harus lebih besar dari level dibawahnya yaitu " +
+            lowerLevel.rows[0].min_point
+        );
+      }
+      if (
+        upperLevel.rows.length > 0 &&
+        min_point >= upperLevel.rows[0].min_point
+      ) {
+        throw new InvariantError(
+          "min_point harus lebih kecil dari level diatasnya yaitu " +
+            upperLevel.rows[0].min_point
+        );
+      }
+
       const query = {
-        text: `UPDATE membership SET membership_category = $1, price = $2, duration = $3, percentage_discount = $4, updated_at = current_timestamp WHERE id = $5 and deleted_at is null RETURNING id`,
-        values: [membership_category, price, duration, percentage_discount, id],
+        text: `UPDATE membership SET membership_category = $1, level = $2, min_point = $3, updated_at = current_timestamp WHERE id = $4 and deleted_at is null RETURNING id`,
+        values: [membership_category, level, min_point, id],
       };
       const result = await this.pool.query(query);
       if (!result.rows.length) {

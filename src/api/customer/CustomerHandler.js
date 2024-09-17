@@ -9,10 +9,9 @@ class CustomerHandler {
   }
   async postCustomerHandler(request, h) {
     this._validator.validateAddCustomer(request.payload);
-    const { user_id, name, email, phone_number, address, membership_id } =
+    const { name, email, phone_number, address, membership_id } =
       request.payload;
     const data = await this._service.addCustomer({
-      user_id,
       name,
       email,
       phone_number,
@@ -84,30 +83,6 @@ class CustomerHandler {
       .response({
         status: "success",
         message: "Customer berhasil dihapus",
-      })
-      .code(200);
-  }
-
-  async extendMembershipHandler(request, h) {
-    this._validator.validateExtendMembership(request.payload);
-    this._validator.validateCustomerParams(request.params);
-    const { user_id, membership_id } = request.payload;
-    const { id } = request.params;
-    const { customer, message, invoice } = await this._service.extendMembership(
-      id,
-      {
-        user_id,
-        membership_id,
-      }
-    );
-    return h
-      .response({
-        status: "success",
-        message,
-        data: {
-          customer,
-          invoice,
-        },
       })
       .code(200);
   }

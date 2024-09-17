@@ -18,7 +18,7 @@ class PurchaseService {
     limit,
   }) {
     let query = `
-    SELECT p.id, s.supplier_name, p.product_id,i.product_name, p.quantity, p.price,p.total_price, p.created_at AS purchase_date
+    SELECT p.id, s.supplier_name, p.product_id,i.product_name, p.quantity, p.price,p.total_price, p.created_at AS purchase_date, p.expiry_date, p.remaining_stock
     FROM purchase p
     LEFT JOIN 
     suppliers s ON p.supplier_id = s.id
@@ -56,7 +56,7 @@ class PurchaseService {
   async getPurchaseByID(id) {
     const query = {
       text: `
-        SELECT p.id, s.supplier_name, p.product_id,i.product_name, p.quantity, p.price,p.total_price, p.created_at AS purchase_date
+        SELECT p.id, s.supplier_name, p.product_id,i.product_name, p.quantity, p.price,p.total_price, p.created_at AS purchase_date, p.expiry_date, p.remaining_stock
         FROM purchase p
         LEFT JOIN 
         suppliers s ON p.supplier_id = s.id
@@ -79,7 +79,7 @@ class PurchaseService {
     }
   }
 
-  async addPurchase({ supplier_id, product_id, quantity, price, total_price }) {
+  async addPurchase({ supplier_id, product_id, quantity, price, expiry_date }) {
     const checkProduct = {
       text: "SELECT id FROM products WHERE id=$1 AND deleted_at IS NULL",
       values: [product_id],
@@ -102,9 +102,19 @@ class PurchaseService {
     } catch (error) {
       throw new InvariantError(error.message);
     }
+
+    const total_price = quantity * price;
     const query = {
-      text: "INSERT INTO purchase (supplier_id,product_id,quantity,price,total_price) VALUES ($1,$2,$3,$4,$5) RETURNING id",
-      values: [supplier_id, product_id, quantity, price, total_price],
+      text: "INSERT INTO purchase (supplier_id,product_id,quantity,price,total_price,expiry_date, remaining_stock) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id",
+      values: [
+        supplier_id,
+        product_id,
+        quantity,
+        price,
+        total_price,
+        expiry_date,
+        quantity,
+      ],
     };
 
     try {

@@ -9,44 +9,37 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("membership_transaction", {
+  pgm.createTable("coupons", {
     id: "id",
-    user_id: {
+    code: {
+      type: "varchar(100)",
+      notNull: true,
+    },
+    discount: {
       type: "int",
       notNull: true,
-      references: "users",
     },
-    customer_id: {
-      type: "int",
+    expired_date: {
+      type: "timestamp",
       notNull: true,
-      references: "customer",
     },
-    membership_id: {
+    membership: {
       type: "int",
       notNull: true,
       references: "membership",
-    },
-    price: {
-      type: "int",
-      notNull: true,
-    },
-    start_date: {
-      type: "timestamp",
-      notNull: true,
-    },
-    end_date: {
-      type: "timestamp",
-      notNull: true,
-    },
-    note: {
-      type: "text",
-      notNull: true,
+      onDelete: "CASCADE",
     },
     created_at: {
       type: "timestamp",
       notNull: true,
       default: pgm.func("current_timestamp"),
     },
+    updated_at: {
+      type: "timestamp",
+      notNull: true,
+      default: pgm.func("current_timestamp"),
+    },
+    deleted_at: { type: "timestamp" },
   });
 };
 
@@ -56,5 +49,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("membership_transaction");
+  pgm.dropTable("coupons");
 };

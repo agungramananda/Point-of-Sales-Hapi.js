@@ -15,7 +15,7 @@ class TransactionsService {
 
   async getTransactions({ startDate, endDate, page, limit }) {
     let query = `select
-    t.id, t.user_id, t.total_items , t.subtotal , t.total_discount , t.total_price , t.payment , t."change" , t.created_at as transaction_date
+    t.id, t.user_id, t.customer_id,t.total_items , t.subtotal , t.total_discount , t.total_price , t.payment , t."change" , t.created_at as transaction_date
     from transactions t where t.created_at is not null`;
     query = beetwenDate(startDate, endDate, "created_at", query);
     const p = pagination({ limit, page });
@@ -94,7 +94,8 @@ class TransactionsService {
           select p.id, p.price, array_agg(pd.discount_id) as discount_list 
           from products p 
           left join product_discount pd on p.id = pd.product_id 
-          where p.id = $1
+          left join discount d on pd.discount_id = d.id 
+          where p.id = $1 and current_timestamp between d.start_date and d.end_date 
           group by p.id
           `,
           values: [item.product_id],
@@ -102,21 +103,27 @@ class TransactionsService {
         const result = await this._pool.query(productQuery);
         const { id, price, discount_list } = result.rows[0];
 
+        if (discount_list[0] === null) {
+          discount_list.pop();
+        }
         let total_discount = 0;
         let subtotal = 0;
         let total_price = 0;
+        console.log(discount_list.length);
         if (discount_list.length > 0) {
           for (const discount_id of discount_list) {
             const discountQuery = {
               text: `
-              select d.discount_value, dt.type_name as discount_type
+              select pd.discount_value, dt.type_name as discount_type
               from discount d 
               left join discount_type dt on d.discount_type_id = dt.id 
+              left join product_discount pd on pd.discount_id = d.id
               where d.id = $1
               `,
               values: [discount_id],
             };
             const discount = await this._pool.query(discountQuery);
+            console.log(discount.rows[0]);
             if (discount.rows[0].discount_type == "Percentage") {
               total_discount += calculatePercentageDiscount(
                 price,
@@ -127,25 +134,6 @@ class TransactionsService {
             }
           }
           total_discount = total_discount * item.quantity;
-        }
-        if (customer_id !== null) {
-          await this._customersService.getCustomerById(customer_id);
-          const customerQuery = {
-            text: `
-            select  m.membership_category ,m.percentage_discount as member_discount
-            from customer c
-            left join membership m on c.membership_id = m.id
-            where c.id = $1 and c.deleted_at is null
-            `,
-            values: [customer_id],
-          };
-          const customer = await this._pool.query(customerQuery);
-          const member_discount =
-            calculatePercentageDiscount(
-              price,
-              customer.rows[0].member_discount
-            ) * item.quantity;
-          total_discount += member_discount;
         }
         subtotal = price * item.quantity;
         if (total_discount > subtotal) {
@@ -197,6 +185,20 @@ class TransactionsService {
         ],
       };
 
+      if (customer_id) {
+        await this._customersService.getCustomerById(customer_id);
+        const points = Math.floor(total_price / 1000);
+        const updatePointsQuery = {
+          text: `
+          UPDATE customer
+          SET points = points + $1
+          WHERE id = $2
+          `,
+          values: [points, customer_id],
+        };
+        await this._pool.query(updatePointsQuery);
+      }
+
       const transactionResult = await this._pool.query(transactionsQuery);
 
       const transaction_id = parseInt(transactionResult.rows[0].id);
@@ -223,7 +225,7 @@ class TransactionsService {
 
       await this._pool.query("COMMIT");
 
-      return transactionResult.rows;
+      return [transactionResult.rows];
     } catch (error) {
       await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);

@@ -48,13 +48,12 @@ class ProductsHandler {
 
   async postProductHandler(request, h) {
     this._validator.validateProductsPayload(request.payload);
-    const { product_name, price, category_id, amount } = request.payload;
+    const { product_name, price, category_id } = request.payload;
 
     const newProduct = await this._service.addProduct({
       product_name,
       price,
       category_id,
-      amount,
     });
 
     return h
@@ -72,14 +71,13 @@ class ProductsHandler {
     this._validator.validateProductsParams(request.params);
     this._validator.validateProductsPayload(request.payload);
     const { id } = request.params;
-    const { product_name, price, category_id, amount } = request.payload;
+    const { product_name, price, category_id } = request.payload;
 
     const editedProduct = await this._service.editProduct({
       id,
       product_name,
       price,
       category_id,
-      amount,
     });
 
     return h
