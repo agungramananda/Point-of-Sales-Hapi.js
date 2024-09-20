@@ -70,7 +70,8 @@ const init = async () => {
   const transactionsService = new TransactionsService(
     productsService,
     usersService,
-    customerService
+    customerService,
+    membershipService
   );
 
   const server = Hapi.server({

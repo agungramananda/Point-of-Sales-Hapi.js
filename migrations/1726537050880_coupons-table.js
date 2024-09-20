@@ -23,11 +23,19 @@ exports.up = (pgm) => {
       type: "timestamp",
       notNull: true,
     },
-    membership: {
+    membership_id: {
       type: "int",
       notNull: true,
       references: "membership",
       onDelete: "CASCADE",
+    },
+    start_date: {
+      type: "timestamp",
+      notNull: true,
+    },
+    end_date: {
+      type: "timestamp",
+      notNull: true,
     },
     created_at: {
       type: "timestamp",

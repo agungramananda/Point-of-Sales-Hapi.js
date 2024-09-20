@@ -6,10 +6,16 @@ const { beetwenDate } = require("../../utils/betweenDate");
 const calculatePercentageDiscount = require("../../utils/calculatePercentageDiscount");
 
 class TransactionsService {
-  constructor(productsService, usersService, customersService) {
+  constructor(
+    productsService,
+    usersService,
+    customersService,
+    membershipsService
+  ) {
     this._productsService = productsService;
     this._usersService = usersService;
     this._customersService = customersService;
+    this._membershipsService = membershipsService;
     this._pool = new Pool();
   }
 
@@ -94,8 +100,8 @@ class TransactionsService {
           select p.id, p.price, array_agg(pd.discount_id) as discount_list 
           from products p 
           left join product_discount pd on p.id = pd.product_id 
-          left join discount d on pd.discount_id = d.id 
-          where p.id = $1 and current_timestamp between d.start_date and d.end_date 
+          left join discount d on pd.discount_id = d.id and current_timestamp between d.start_date and d.end_date 
+          where p.id = $1 
           group by p.id
           `,
           values: [item.product_id],
@@ -197,6 +203,7 @@ class TransactionsService {
           values: [points, customer_id],
         };
         await this._pool.query(updatePointsQuery);
+        await this._membershipsService.updateMembershipLevel(customer_id);
       }
 
       const transactionResult = await this._pool.query(transactionsQuery);
