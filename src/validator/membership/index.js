@@ -3,6 +3,7 @@ const {
   MembershipQuerySchema,
   MembershipPayloadSchema,
   MembershipParamsSchema,
+  PointsRulesPayloadSchema,
 } = require("./schema");
 
 const MembershipValidator = {
@@ -20,6 +21,12 @@ const MembershipValidator = {
   },
   validateMembershipParams: (params) => {
     const validationResult = MembershipParamsSchema.validate(params);
+    if (validationResult.error) {
+      throw new Error(validationResult.error.message);
+    }
+  },
+  validatePointsRulesPayload: (payload) => {
+    const validationResult = PointsRulesPayloadSchema.validate(payload);
     if (validationResult.error) {
       throw new Error(validationResult.error.message);
     }

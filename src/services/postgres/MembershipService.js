@@ -205,20 +205,57 @@ class MembershipService {
       }
       const points = result.rows[0].points;
       const membership = await this.pool.query(
-        `SELECT id, level, min_point FROM membership WHERE $1 >= min_point and deleted_at is null ORDER BY level DESC LIMIT 1`,
+        `SELECT id, min_point FROM membership WHERE $1 >= min_point and deleted_at is null ORDER BY level DESC LIMIT 1`,
         [points]
       );
       if (!membership.rows.length) {
         return;
       }
       const membershipId = membership.rows[0].id;
-      const level = membership.rows[0].level;
       const queryUpdate = {
         text: `UPDATE customer SET membership_id = $1 WHERE id = $2 and deleted_at is null`,
         values: [membershipId, customerId],
       };
       await this.pool.query(queryUpdate);
-      return level;
+    } catch (error) {
+      if (error.name === "NotFoundError") {
+        throw error;
+      }
+      throw new InvariantError(error.message);
+    }
+  }
+
+  async getPointsRules() {
+    try {
+      const query = `SELECT pr.id, pr.min_amount_of_transaction, pr.amount_of_spent, pr.points from points_rules pr`;
+      const result = await this.pool.query(query);
+      const description = `Setiap transaksi senilai ${result.rows[0].amount_of_spent} akan mendapatkan points sebesar ${result.rows[0].points} dengan syarat minimal belanja sebesar ${result.rows[0].min_amount_of_transaction}`;
+      const data = { ...result.rows[0], description };
+      return data;
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
+
+  async editPointsRules({
+    min_amount_of_transaction,
+    amount_of_spent,
+    points,
+  }) {
+    try {
+      const checkPoints = await this.pool.query(`SELECT id FROM points_rules`);
+      if (checkPoints.rows.length == 0) {
+        throw new NotFoundError(
+          "Points Rules tidak ditemukan silahkan buat rules baru"
+        );
+      }
+      const id = checkPoints.rows[0].id;
+      const query = {
+        text: `UPDATE points_rules SET points = $1, min_amount_of_transaction = $2, amount_of_spent = $3 WHERE id = $4 RETURNING id`,
+        values: [points, min_amount_of_transaction, amount_of_spent, id],
+      };
+      const result = await this.pool.query(query);
+      return result.rows[0].id;
     } catch (error) {
       if (error.name == "NotFoundError") {
         throw error;

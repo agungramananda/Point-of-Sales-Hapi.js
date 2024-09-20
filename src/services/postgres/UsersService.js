@@ -154,6 +154,19 @@ class UserService {
     }
   }
 
+  async verifyUser(id) {
+    const query = {
+      text: `select id from users where id = $1 and deleted_at is null`,
+      values: [id],
+    };
+
+    try {
+      const result = await this._pool.query(query);
+      return result.rows[0].id;
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
   async verifyUserCredential({ username, password }) {
     const query = {
       text: `SELECT u.id,u.password,r.role 

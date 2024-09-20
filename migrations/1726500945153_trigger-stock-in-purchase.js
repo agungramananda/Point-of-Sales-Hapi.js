@@ -17,17 +17,30 @@ exports.up = (pgm) => {
       language: "plpgsql",
     },
     `
+    DECLARE
+      remaining_quantity INTEGER := NEW.quantity;
+      purchase_id INTEGER;
+      purchase_remaining_stock INTEGER;
     BEGIN
-      UPDATE purchase
-      SET remaining_stock = remaining_stock - NEW.quantity
-      WHERE product_id = NEW.product_id
-      AND id = (
-        SELECT id
+      FOR purchase_id, purchase_remaining_stock IN
+        SELECT id, remaining_stock
         FROM purchase
-        WHERE product_id = NEW.product_id
+        WHERE product_id = NEW.product_id AND remaining_stock > 0
         ORDER BY created_at ASC
-        LIMIT 1
-      );
+      LOOP
+        IF remaining_quantity <= purchase_remaining_stock THEN
+          UPDATE purchase
+          SET remaining_stock = remaining_stock - remaining_quantity
+          WHERE id = purchase_id;
+          remaining_quantity := 0;
+          EXIT;
+        ELSE
+          UPDATE purchase
+          SET remaining_stock = 0
+          WHERE id = purchase_id;
+          remaining_quantity := remaining_quantity - purchase_remaining_stock;
+        END IF;
+      END LOOP;
 
       RETURN NEW;
     END;

@@ -49,5 +49,25 @@ const routes = (handler) => [
       },
     },
   },
+  {
+    method: "GET",
+    path: "/points-rules",
+    handler: handler.getPointsRulesHandler,
+    config: {
+      plugins: {
+        rbac: ["READ_MEMBER"],
+      },
+    },
+  },
+  {
+    method: "PUT",
+    path: "/points-rules",
+    handler: handler.putPointsRulesHandler,
+    config: {
+      plugins: {
+        rbac: ["UPDATE_MEMBER"],
+      },
+    },
+  },
 ];
 module.exports = routes;

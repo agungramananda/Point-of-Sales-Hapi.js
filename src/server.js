@@ -142,13 +142,24 @@ const init = async () => {
       sub: false,
       maxAgeSec: 3600, //1 jam
     },
-    validate: (artifact) => ({
-      isValid: true,
-      credentials: {
-        id: artifact.decoded.payload.id,
-        permission: artifact.decoded.payload.permission,
-      },
-    }),
+    validate: async (artifact) => {
+      const userId = artifact.decoded.payload.id;
+      try {
+        const checkUser = await usersService.verifyUser(userId);
+        if (!checkUser) {
+          return { isValid: false };
+        }
+        return {
+          isValid: true,
+          credentials: {
+            id: userId,
+            permission: artifact.decoded.payload.permission,
+          },
+        };
+      } catch (error) {
+        return { isValid: false };
+      }
+    },
   });
 
   server.auth.default("pos_jwt");

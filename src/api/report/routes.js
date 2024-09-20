@@ -47,6 +47,18 @@ const routes = (handler) => [
       },
     },
   },
+  {
+    method: "GET",
+    path: "/report/stock-movement",
+    handler: handler.getStockReportHandler,
+    config: {
+      plugins: {
+        rbac: {
+          permission: ["GET_REPORT"],
+        },
+      },
+    },
+  },
 ];
 
 module.exports = routes;

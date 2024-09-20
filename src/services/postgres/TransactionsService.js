@@ -4,6 +4,7 @@ const NotFoundError = require("../../exceptions/NotFoundError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { beetwenDate } = require("../../utils/betweenDate");
 const calculatePercentageDiscount = require("../../utils/calculatePercentageDiscount");
+const { addCustomerPoints } = require("../../utils/customerPointsManager");
 
 class TransactionsService {
   constructor(
@@ -192,18 +193,10 @@ class TransactionsService {
       };
 
       if (customer_id) {
-        await this._customersService.getCustomerById(customer_id);
-        const points = Math.floor(total_price / 1000);
-        const updatePointsQuery = {
-          text: `
-          UPDATE customer
-          SET points = points + $1
-          WHERE id = $2
-          `,
-          values: [points, customer_id],
-        };
-        await this._pool.query(updatePointsQuery);
-        await this._membershipsService.updateMembershipLevel(customer_id);
+        const customer = await this._customersService.getCustomerById(
+          customer_id
+        );
+        await addCustomerPoints(this._pool, customer, total_price);
       }
 
       const transactionResult = await this._pool.query(transactionsQuery);

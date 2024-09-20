@@ -9,7 +9,12 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.create;
+  pgm.addColumn("purchase", {
+    received_date: {
+      type: "timestamp",
+      notNull: true,
+    },
+  });
 };
 
 /**
@@ -17,4 +22,6 @@ exports.up = (pgm) => {
  * @param run {() => void | undefined}
  * @returns {Promise<void> | void}
  */
-exports.down = (pgm) => {};
+exports.down = (pgm) => {
+  pgm.dropColumns("purchase", ["received_date"]);
+};

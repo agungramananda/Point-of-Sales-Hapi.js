@@ -16,8 +16,15 @@ const MembershipParamsSchema = Joi.object({
   id: Joi.number().required(),
 });
 
+const PointsRulesPayloadSchema = Joi.object({
+  min_amount_of_transaction: Joi.number().required().min(0),
+  amount_of_spent: Joi.number().required().min(0),
+  points: Joi.number().required().min(0),
+});
+
 module.exports = {
   MembershipQuerySchema,
   MembershipPayloadSchema,
   MembershipParamsSchema,
+  PointsRulesPayloadSchema,
 };

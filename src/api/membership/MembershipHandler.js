@@ -85,6 +85,32 @@ class MembershipHandler {
       })
       .code(200);
   }
+
+  async getPointsRulesHandler(_, h) {
+    const data = await this._service.getPointsRules();
+    return h
+      .response({
+        status: "success",
+        data,
+      })
+      .code(200);
+  }
+
+  async putPointsRulesHandler(request, h) {
+    this._validator.validatePointsRulesPayload(request.payload);
+    const { min_amount_of_transaction, amount_of_spent, points } =
+      request.payload;
+    await this._service.editPointsRules({
+      amount_of_transaction,
+      points,
+    });
+    return h
+      .response({
+        status: "success",
+        message: "Points Rules berhasil diperbarui",
+      })
+      .code(200);
+  }
 }
 
 module.exports = MembershipHandler;

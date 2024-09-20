@@ -20,8 +20,17 @@ const ProductReportQuerySchema = Joi.object({
   limit: Joi.number().integer().min(1).allow("").default(25),
 });
 
+const StockReportQuerySchema = Joi.object({
+  page: Joi.number().integer().allow("").default(1),
+  limit: Joi.number().integer().min(1).allow("").default(25),
+  date: Joi.date().allow(""),
+  productName: Joi.string().allow(""),
+  type: Joi.string().allow("").valid("TRANSACTION", "PURCHASE"),
+});
+
 module.exports = {
   SalesReportQuerySchema,
   PurchaseReportQuerySchema,
   ProductReportQuerySchema,
+  StockReportQuerySchema,
 };

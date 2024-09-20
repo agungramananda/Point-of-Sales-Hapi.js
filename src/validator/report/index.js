@@ -1,10 +1,9 @@
 const InvariantError = require("../../exceptions/InvariantError");
 const {
   SalesReportQuerySchema,
-  SalesReportPayloadSchema,
-  PurchaseReportPayloadSchema,
   PurchaseReportQuerySchema,
   ProductReportQuerySchema,
+  StockReportQuerySchema,
 } = require("./schema");
 
 const ReportValidator = {
@@ -24,6 +23,13 @@ const ReportValidator = {
   },
   validateProductReportQuery: (query) => {
     const validationResult = ProductReportQuerySchema.validate(query);
+
+    if (validationResult.error) {
+      throw new InvariantError(validationResult.error.message);
+    }
+  },
+  validateStockReportQuery: (query) => {
+    const validationResult = StockReportQuerySchema.validate(query);
 
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);

@@ -82,6 +82,26 @@ class ReportHandler {
       })
       .code(200);
   }
+
+  async getStockReportHandler(request, h) {
+    this._validator.validateStockReportQuery(request.query);
+    const { page, limit, date, productName, type } = request.query;
+    const { data, infoPage } = await this._service.getStockReport({
+      productName,
+      type,
+      page,
+      limit,
+      date,
+    });
+
+    return h
+      .response({
+        status: "success",
+        data,
+        infoPage,
+      })
+      .code(200);
+  }
 }
 
 module.exports = ReportHandler;

@@ -2,6 +2,8 @@ const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { beetwenDate } = require("../../utils/betweenDate");
+const { searchName } = require("../../utils/searchName");
+const { filterQuery } = require("../../utils/filterQuery");
 
 class ReportService {
   constructor() {
@@ -21,7 +23,6 @@ class ReportService {
 
     query = beetwenDate(startDate, endDate, "t.created_at", query);
     query += " GROUP BY DATE(t.created_at) ORDER BY DATE(t.created_at) DESC";
-    console.log(query);
     const p = pagination({ limit, page });
     const infoPage = await getMaxPage(p, query);
     query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
@@ -96,6 +97,47 @@ class ReportService {
     WHERE DATE(p.created_at) = '${date}'
     GROUP BY i.product_name
     `;
+    const p = pagination({ limit, page });
+    const infoPage = await getMaxPage(p, query);
+    query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
+    try {
+      const result = await this._pool.query(query);
+      return { data: result.rows, infoPage };
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
+
+  async getStockReport({ productName, type, page, limit, date }) {
+    let query = `
+      select s.id, s.product_id, p.product_name, s.movement_type, s.quantity_change, s.references_id, s.created_at as "date" 
+      from stockmovement s 
+      left join products p ON s.product_id = p.id
+      where s.created_at is not null
+      `;
+
+    if (productName) {
+      query = searchName(
+        { keyword: productName },
+        "products p",
+        "p.product_name",
+        query
+      );
+    }
+
+    if (type) {
+      query = await filterQuery(
+        { keyword: type },
+        "stockmovement s",
+        "s.movement_type",
+        query
+      );
+    }
+
+    if (date) {
+      query += ` AND DATE(s.created_at) = '${date}'`;
+    }
+
     const p = pagination({ limit, page });
     const infoPage = await getMaxPage(p, query);
     query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
