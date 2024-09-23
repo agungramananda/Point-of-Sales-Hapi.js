@@ -49,11 +49,20 @@ const customers = require("./api/customer");
 const CustomerService = require("./services/postgres/CustomerService");
 const CustomersValidator = require("./validator/customer");
 
+const stock = require("./api/stock");
+const StockService = require("./services/postgres/StockService");
+const StockValidator = require("./validator/stock");
+
+const notifications = require("./api/notifications");
+
 const auth = require("./api/auth");
 const AuthValidator = require("./validator/auth");
 const AuthService = require("./services/postgres/AuthService");
 const tokenManager = require("./utils/tokenManager");
 const rbacPlugin = require("./plugins/rbac");
+
+const IoService = require("./services/socket.io/IoService");
+const RedisService = require("./services/redis/RedisService");
 
 const init = async () => {
   const categoriesService = new CategoriesService();
@@ -67,11 +76,15 @@ const init = async () => {
   const discountService = new DiscountService();
   const membershipService = new MembershipService();
   const customerService = new CustomerService();
+  const stockService = new StockService();
+  const redisService = new RedisService();
+  const ioService = new IoService(redisService);
   const transactionsService = new TransactionsService(
     productsService,
     usersService,
     customerService,
-    membershipService
+    membershipService,
+    ioService
   );
 
   const server = Hapi.server({
@@ -251,6 +264,19 @@ const init = async () => {
         validator: CustomersValidator,
       },
     },
+    {
+      plugin: stock,
+      options: {
+        service: stockService,
+        validator: StockValidator,
+      },
+    },
+    {
+      plugin: notifications,
+      options: {
+        service: redisService,
+      },
+    },
   ]);
 
   server.ext("onPreResponse", (request, h) => {
@@ -281,6 +307,7 @@ const init = async () => {
   });
 
   await server.start();
+  await ioService.init(server.listener);
   console.log(`Server is running on ${server.info.uri}`);
 };
 

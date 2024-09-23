@@ -11,13 +11,15 @@ class TransactionsService {
     productsService,
     usersService,
     customersService,
-    membershipsService
+    membershipsService,
+    ioService
   ) {
     this._productsService = productsService;
     this._usersService = usersService;
     this._customersService = customersService;
     this._membershipsService = membershipsService;
     this._pool = new Pool();
+    this._ioService = ioService;
   }
 
   async getTransactions({ startDate, endDate, page, limit }) {
@@ -116,7 +118,6 @@ class TransactionsService {
         let total_discount = 0;
         let subtotal = 0;
         let total_price = 0;
-        console.log(discount_list.length);
         if (discount_list.length > 0) {
           for (const discount_id of discount_list) {
             const discountQuery = {
@@ -130,7 +131,6 @@ class TransactionsService {
               values: [discount_id],
             };
             const discount = await this._pool.query(discountQuery);
-            console.log(discount.rows[0]);
             if (discount.rows[0].discount_type == "Percentage") {
               total_discount += calculatePercentageDiscount(
                 price,
@@ -221,6 +221,21 @@ class TransactionsService {
           ],
         };
         await this._pool.query(transactionDetailQuery);
+
+        const stockQuery = {
+          text: `SELECT s.amount, s.minimum_stock_level FROM stock s WHERE s.product_id = $1`,
+          values: [product.product_id],
+        };
+        const stockResult = await this._pool.query(stockQuery);
+        const { amount, minimum_stock_level } = stockResult.rows[0];
+
+        if (amount <= minimum_stock_level) {
+          const notification = {
+            title: "Low Stock Alert",
+            message: `Stock produk dengan id ${product.product_id} sudah mencapai batas minimum yaitu ${minimum_stock_level}. Stock sekarang ${amount}`,
+          };
+          this._ioService.sendNotification(notification);
+        }
       }
 
       await this._pool.query("COMMIT");
