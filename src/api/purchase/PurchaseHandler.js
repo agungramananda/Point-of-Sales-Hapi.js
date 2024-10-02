@@ -8,61 +8,83 @@ class PurchaseHandler {
     autoBind(this);
   }
 
-  async getAllPurchaseHandler(request, h) {
-    this._validator.validatePurchaseQuery(request.query);
-    const { supplierName, productName, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getAllPurchase({
-      supplierName,
-      productName,
+  async getPurchaseStatusHandler(_, h) {
+    const purchaseStatus = await this._service.getPurchaseStatus();
+    return h.response({
+      status: "success",
+      data: {
+        purchaseStatus,
+      },
+    });
+  }
+
+  async getPurchaseHandler(request, h) {
+    const { supplier, startDate, endDate, page, limit } = request.query;
+    const purchases = await this._service.getPurchase({
+      supplier,
+      startDate,
+      endDate,
       page,
       limit,
     });
-
-    return h
-      .response({
-        status: "success",
-        data,
-        infoPage,
-      })
-      .code(200);
-  }
-
-  async getPurchaseByIDHandler(request, h) {
-    this._validator.validatePurchaseParams(request.params);
-
-    const { id } = request.params;
-    const purchase = await this._service.getPurchaseByID(id);
-
-    return h
-      .response({
-        status: "success",
-        data: {
-          purchase,
-        },
-      })
-      .code(200);
-  }
-
-  async postPurchaseHandler(request, h) {
-    this._validator.validatePurchasePayload(request.payload);
-
-    const { supplier_id, product_id, quantity, price, expiry_date } =
-      request.payload;
-
-    const newPurchase = await this._service.addPurchase({
-      supplier_id,
-      product_id,
-      quantity,
-      price,
-      expiry_date,
-    });
-
     return h.response({
       status: "success",
-      message: "Pembelian berhasil ditambahkan",
       data: {
-        newPurchase,
+        purchases,
       },
+    });
+  }
+
+  async getPurchaseDetailsByPurchaseIdHandler(request, h) {
+    const { id } = request.params;
+    const purchaseDetails = await this._service.getPurchaseDetailsByPurchaseId(
+      id
+    );
+    return h.response({
+      status: "success",
+      data: {
+        purchaseDetails,
+      },
+    });
+  }
+
+  async addPurchaseHandler(request, h) {
+    const purchaseId = await this._service.addPurchase(request.payload);
+    return h
+      .response({
+        status: "success",
+        message: "Pembelian berhasil ditambahkan",
+        data: {
+          purchaseId,
+        },
+      })
+      .code(201);
+  }
+
+  async editPurchaseHandler(request, h) {
+    const { id } = request.params;
+    await this._service.editPurchase({ id, ...request.payload });
+    return h.response({
+      status: "success",
+      message: "Purchase updated successfully",
+    });
+  }
+
+  async editPurchaseDetailsHandler(request, h) {
+    const { id } = request.params;
+    await this._service.editPurchaseDetails({ id, ...request.payload });
+    return h.response({
+      status: "success",
+      message: "Purchase details updated successfully",
+    });
+  }
+
+  async completePurchaseHandler(request, h) {
+    const { id } = request.params;
+    await this._service.completePurchase(id);
+    return h.response({
+      status: "success",
+      message: "Purchase completed successfully",
     });
   }
 }

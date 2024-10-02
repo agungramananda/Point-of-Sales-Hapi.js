@@ -11,7 +11,7 @@ class StockService {
 
   async getStocks({ productName, page, limit }) {
     let query = `
-      select s.product_id, p.product_name, s.amount, s.maximum_stock_level , s.minimum_stock_level , s.reorder_point 
+      select s.product_id, p.product_name, s.amount, s.maximum_stock , s.safety_stock , s.reorder_point 
       from stock s 
       left join products p on s.product_id = p.id
       where p.deleted_at is null
@@ -41,7 +41,7 @@ class StockService {
   async getStockByProductId(id) {
     const query = {
       text: `
-        SELECT s.product_id, p.product_name, s.amount, s.maximum_stock_level , s.minimum_stock_level , s.reorder_point 
+        SELECT s.product_id, p.product_name, s.amount, s.maximum_stock , s.safety_stock , s.reorder_point 
         FROM stock s
         LEFT JOIN products p ON s.product_id = p.id
         WHERE s.product_id = $1 and p.deleted_at is null
@@ -61,7 +61,7 @@ class StockService {
     }
   }
 
-  async setStockSettings({ id, maximumStockLevel, minimumStockLevel }) {
+  async setStockSettings({ id, safetyStock, maximumStock }) {
     const checkProduct = await this.getStockByProductId(id);
     if (checkProduct.length === 0) {
       throw new NotFoundError("product not found");
@@ -69,11 +69,11 @@ class StockService {
     const query = {
       text: `
         UPDATE stock
-        SET maximum_stock_level = $1, minimum_stock_level = $2
+        SET safety_stock = $1, maximum_stock = $2
         WHERE product_id = $3
-        RETURNING product_id, maximum_stock_level, minimum_stock_level
+        RETURNING product_id, safety_stock, maximum_stock
       `,
-      values: [maximumStockLevel, minimumStockLevel, id],
+      values: [safetyStock, maximumStock, id],
     };
 
     try {
@@ -88,28 +88,28 @@ class StockService {
     }
   }
 
-  async setReorderPoint({ id, reorderPoint }) {
-    const checkProduct = await this.getStockByProductId(id);
-    if (checkProduct.length === 0) {
-      throw new NotFoundError("product not found");
-    }
+  async checkMaximumStock(product_id, addedStock) {
     const query = {
       text: `
-        UPDATE stock
-        SET reorder_point = $1
-        WHERE product_id = $2
-        RETURNING product_id, reorder_point
+        SELECT amount, maximum_stock
+        FROM stock
+        WHERE product_id = $1
       `,
-      values: [reorderPoint, id],
+      values: [product_id],
     };
 
     try {
       const result = await this._pool.query(query);
-      if (result.rowCount === 0) {
-        throw new NotFoundError("stock not found");
+      if (result.rows.length === 0) {
+        throw new InvariantError("Produk tidak ditemukan");
       }
 
-      return result.rows;
+      const { amount, maximum_stock } = result.rows[0];
+      if (amount + addedStock > maximum_stock) {
+        throw new InvariantError(
+          `stock melebihi batas maksimum untuk produk dengan id ${product_id}`
+        );
+      }
     } catch (error) {
       throw new InvariantError(error.message);
     }

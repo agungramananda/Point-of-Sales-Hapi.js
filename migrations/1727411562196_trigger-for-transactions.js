@@ -19,25 +19,26 @@ exports.up = (pgm) => {
     `
     DECLARE
       remaining_quantity INTEGER := NEW.quantity;
-      purchase_id INTEGER;
+      p_id INTEGER;
       purchase_remaining_stock INTEGER;
     BEGIN
-      FOR purchase_id, purchase_remaining_stock IN
-        SELECT id, remaining_stock
-        FROM purchase
-        WHERE product_id = NEW.product_id AND remaining_stock > 0
+      FOR p_id, purchase_remaining_stock IN
+        SELECT pd.id, pd.remaining_stock, p.status_id
+        FROM purchase_details pd
+        LEFT JOIN purchase p ON pd.purchase_id = p.id
+        WHERE pd.product_id = NEW.product_id AND pd.remaining_stock > 0 and p.status_id = 2
         ORDER BY created_at ASC
       LOOP
         IF remaining_quantity <= purchase_remaining_stock THEN
-          UPDATE purchase
+          UPDATE purchase_details
           SET remaining_stock = remaining_stock - remaining_quantity
-          WHERE id = purchase_id;
+          WHERE id = p_id;
           remaining_quantity := 0;
           EXIT;
         ELSE
-          UPDATE purchase
+          UPDATE purchase_details
           SET remaining_stock = 0
-          WHERE id = purchase_id;
+          WHERE id = p_id;
           remaining_quantity := remaining_quantity - purchase_remaining_stock;
         END IF;
       END LOOP;

@@ -12,19 +12,21 @@ class TransactionsService {
     usersService,
     customersService,
     membershipsService,
+    voucherService,
     ioService
   ) {
     this._productsService = productsService;
     this._usersService = usersService;
     this._customersService = customersService;
     this._membershipsService = membershipsService;
+    this._voucherService = voucherService;
     this._pool = new Pool();
     this._ioService = ioService;
   }
 
   async getTransactions({ startDate, endDate, page, limit }) {
     let query = `select
-    t.id, t.user_id, t.customer_id,t.total_items , t.subtotal , t.total_discount , t.total_price , t.payment , t."change" , t.created_at as transaction_date
+    t.id, t.user_id, t.customer_id,t.total_items , t.subtotal , t.total_discount ,t.voucher_id, t.voucher_discount, t.points_used, t.total_price , t.payment , t."change" , t.created_at as transaction_date
     from transactions t where t.created_at is not null`;
     query = beetwenDate(startDate, endDate, "created_at", query);
     const p = pagination({ limit, page });
@@ -63,7 +65,14 @@ class TransactionsService {
     }
   }
 
-  async addTransaction({ user_id, customer_id, items, payment }) {
+  async addTransaction({
+    user_id,
+    customer_id,
+    items,
+    payment,
+    voucher,
+    points_used,
+  }) {
     //items = [{product_id, quantity}]
     const products = [];
 
@@ -161,12 +170,95 @@ class TransactionsService {
       let total_items = 0;
       let total_discount = 0;
       let subtotal = 0;
+      let voucher_discount = 0;
+      let points_discount = points_used ? points_used : null;
 
       for (const product of products) {
         total_price += product.total_product_price;
         total_items += product.quantity;
         total_discount += product.total_product_discount;
         subtotal += product.subtotal_product;
+      }
+      if (!customer_id && voucher) {
+        throw new InvariantError("Voucher hanya bisa digunakan oleh customer");
+      }
+      if (customer_id && !voucher && points_used) {
+        throw new InvariantError("Poin hanya bisa digunakan oleh customer");
+      }
+      if (voucher && points_used) {
+        throw new InvariantError(
+          "Voucher dan poin tidak bisa digunakan bersamaan"
+        );
+      }
+
+      const v_id = voucher
+        ? await this._voucherService.getVoucherByCode(voucher)
+        : null;
+
+      if (customer_id) {
+        const customer = await this._customersService.getCustomerById(
+          customer_id
+        );
+        const rules = await this._membershipsService.getPointsRules();
+        if (rules.points_usage == "Redeem Voucher") {
+          console.log(voucher);
+          if (voucher) {
+            const voucherData = await this._voucherService.getVoucherByCode(
+              voucher
+            );
+            const customerVoucher =
+              await this._voucherService.checkCustomerVoucher({
+                customer_id: customer_id,
+                voucher_id: voucherData.id,
+              });
+            console.log(customerVoucher);
+            console.log(voucherData);
+            if (voucherData.min_transaction > total_price) {
+              throw new InvariantError(
+                `Voucher hanya bisa digunakan untuk transaksi minimal ${voucherData.min_transaction} anda hanya membeli ${total_price}`
+              );
+            }
+            if (customerVoucher.expiry_date < new Date()) {
+              throw new InvariantError("Voucher sudah kadaluarsa");
+            }
+            if (voucherData.discount_type == "Percentage") {
+              voucher_discount = calculatePercentageDiscount(
+                total_price,
+                voucherData.discount_value
+              );
+              if (voucher_discount > voucherData.max_discount) {
+                voucher_discount = voucherData.max_discount;
+              }
+              total_discount += voucher_discount;
+              total_price -= voucher_discount;
+            } else {
+              if (voucherData.discount_value > voucherData.max_discount) {
+                voucherData.discount_value = voucherData.max_discount;
+              }
+              total_discount += voucherData.discount_value;
+              total_price -= voucherData.discount_value;
+            }
+            await this._voucherService.useVoucher({
+              voucher_id: voucherData.id,
+              customer_id: customer_id,
+            });
+          }
+        } else if (points_used) {
+          if (points_used > customer.points) {
+            throw new InvariantError(
+              "Poin yang digunakan melebihi poin yang dimiliki"
+            );
+          }
+          if (points_used > total_price) {
+            throw new InvariantError(
+              "Poin yang digunakan melebihi total harga"
+            );
+          }
+          points_discount = points_used;
+          total_discount += points_used;
+          total_price -= points_used;
+        }
+        await addCustomerPoints(this._pool, customer, total_price);
       }
 
       if (payment < total_price) {
@@ -177,8 +269,8 @@ class TransactionsService {
 
       const transactionsQuery = {
         text: `
-        INSERT INTO transactions (user_id, customer_id, total_items, subtotal, total_discount,total_price, payment, change)
-        VALUES ($1,$2,$3,$4,$5, $6, $7, $8) RETURNING id
+        INSERT INTO transactions (user_id, customer_id, total_items, subtotal, total_discount,total_price, payment, change, voucher_id, voucher_discount, points_used)
+        VALUES ($1,$2,$3,$4,$5, $6, $7, $8, $9, $10, $11) RETURNING id
         `,
         values: [
           user_id,
@@ -189,15 +281,11 @@ class TransactionsService {
           total_price,
           payment,
           change,
+          v_id ? v_id.id : null,
+          voucher_discount,
+          points_discount,
         ],
       };
-
-      if (customer_id) {
-        const customer = await this._customersService.getCustomerById(
-          customer_id
-        );
-        await addCustomerPoints(this._pool, customer, total_price);
-      }
 
       const transactionResult = await this._pool.query(transactionsQuery);
 
@@ -223,16 +311,16 @@ class TransactionsService {
         await this._pool.query(transactionDetailQuery);
 
         const stockQuery = {
-          text: `SELECT s.amount, s.minimum_stock_level FROM stock s WHERE s.product_id = $1`,
+          text: `SELECT s.amount, s.safety_stock FROM stock s WHERE s.product_id = $1`,
           values: [product.product_id],
         };
         const stockResult = await this._pool.query(stockQuery);
-        const { amount, minimum_stock_level } = stockResult.rows[0];
+        const { amount, safety_stock } = stockResult.rows[0];
 
-        if (amount <= minimum_stock_level) {
+        if (amount <= safety_stock) {
           const notification = {
             title: "Low Stock Alert",
-            message: `Stock produk dengan id ${product.product_id} sudah mencapai batas minimum yaitu ${minimum_stock_level}. Stock sekarang ${amount}`,
+            message: `Stock produk dengan id ${product.product_id} sudah mencapai batas minimum yaitu ${safety_stock}. Stock sekarang ${amount}`,
           };
           this._ioService.sendNotification(notification);
         }
@@ -243,6 +331,7 @@ class TransactionsService {
       return [transactionResult.rows];
     } catch (error) {
       await this._pool.query("ROLLBACK");
+      console.log(error);
       throw new InvariantError(error.message);
     }
   }

@@ -6,16 +6,10 @@ const ProductsParamsSchema = Joi.object({
 
 const ProductsPayloadSchema = Joi.object({
   product_name: Joi.string().required(),
-  price: Joi.number().integer().required(),
   category_id: Joi.number().integer().required(),
-});
-
-const ProductsEditStockSchema = Joi.object({
-  amount: Joi.number().integer().required(),
-});
-
-const ProductsEditPriceSchema = Joi.object({
   price: Joi.number().integer().required(),
+  safety_stock: Joi.number().integer().required(),
+  maximum_stock: Joi.number().integer().required(),
 });
 
 const ProductSortQuerySchema = Joi.object({
@@ -38,7 +32,5 @@ const ProductSortQuerySchema = Joi.object({
 module.exports = {
   ProductsParamsSchema,
   ProductsPayloadSchema,
-  ProductsEditStockSchema,
-  ProductsEditPriceSchema,
   ProductSortQuerySchema,
 };

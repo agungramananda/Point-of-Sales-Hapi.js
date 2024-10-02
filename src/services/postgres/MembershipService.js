@@ -227,8 +227,13 @@ class MembershipService {
 
   async getPointsRules() {
     try {
-      const query = `SELECT pr.id, pr.min_amount_of_transaction, pr.amount_of_spent, pr.points from points_rules pr`;
+      const query = `SELECT pr.id, pr.min_amount_of_transaction, pr.amount_of_spent, pr.points, pr.points_usage from points_rules pr`;
       const result = await this.pool.query(query);
+      if (result.rows[0].points_usage == 0) {
+        result.rows[0].points_usage = "Potongan Langsung";
+      } else {
+        result.rows[0].points_usage = "Redeem Voucher";
+      }
       const description = `Setiap transaksi senilai ${result.rows[0].amount_of_spent} akan mendapatkan points sebesar ${result.rows[0].points} dengan syarat minimal belanja sebesar ${result.rows[0].min_amount_of_transaction}`;
       const data = { ...result.rows[0], description };
       return data;
@@ -241,6 +246,7 @@ class MembershipService {
     min_amount_of_transaction,
     amount_of_spent,
     points,
+    points_usage,
   }) {
     try {
       const checkPoints = await this.pool.query(`SELECT id FROM points_rules`);
@@ -251,8 +257,14 @@ class MembershipService {
       }
       const id = checkPoints.rows[0].id;
       const query = {
-        text: `UPDATE points_rules SET points = $1, min_amount_of_transaction = $2, amount_of_spent = $3 WHERE id = $4 RETURNING id`,
-        values: [points, min_amount_of_transaction, amount_of_spent, id],
+        text: `UPDATE points_rules SET points = $1, min_amount_of_transaction = $2, amount_of_spent = $3, points_usage = $4 WHERE id = $5 RETURNING id`,
+        values: [
+          points,
+          min_amount_of_transaction,
+          amount_of_spent,
+          points_usage,
+          id,
+        ],
       };
       const result = await this.pool.query(query);
       return result.rows[0].id;

@@ -98,11 +98,14 @@ class MembershipHandler {
 
   async putPointsRulesHandler(request, h) {
     this._validator.validatePointsRulesPayload(request.payload);
-    const { min_amount_of_transaction, amount_of_spent, points } =
+    const { min_amount_of_transaction, amount_of_spent, points, points_usage } =
       request.payload;
+    //points_usage : 0 = Potongan langsung, 1 = Redeem Voucher
     await this._service.editPointsRules({
-      amount_of_transaction,
+      min_amount_of_transaction,
+      amount_of_spent,
       points,
+      points_usage,
     });
     return h
       .response({

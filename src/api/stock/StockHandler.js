@@ -40,11 +40,11 @@ class StockHandler {
     this._validator.validateStockQuery(request.query);
     this._validator.validaateEditStockSettings(request.payload);
     const { id } = request.params;
-    const { maximumStockLevel, minimumStockLevel } = request.payload;
+    const { safetyStock, maximumStock } = request.payload;
     await this._service.setStockSettings({
       id,
-      maximumStockLevel,
-      minimumStockLevel,
+      safetyStock,
+      maximumStock,
     });
     return h
       .response({

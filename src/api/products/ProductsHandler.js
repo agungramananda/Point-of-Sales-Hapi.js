@@ -48,12 +48,15 @@ class ProductsHandler {
 
   async postProductHandler(request, h) {
     this._validator.validateProductsPayload(request.payload);
-    const { product_name, price, category_id } = request.payload;
+    const { product_name, price, category_id, safety_stock, maximum_stock } =
+      request.payload;
 
     const newProduct = await this._service.addProduct({
       product_name,
-      price,
       category_id,
+      price,
+      safety_stock,
+      maximum_stock,
     });
 
     return h
@@ -71,12 +74,11 @@ class ProductsHandler {
     this._validator.validateProductsParams(request.params);
     this._validator.validateProductsPayload(request.payload);
     const { id } = request.params;
-    const { product_name, price, category_id } = request.payload;
+    const { product_name, category_id } = request.payload;
 
     const editedProduct = await this._service.editProduct({
       id,
       product_name,
-      price,
       category_id,
     });
 
@@ -104,45 +106,6 @@ class ProductsHandler {
         message: "Product berhasil dihapus",
         data: {
           deletedProduct,
-        },
-      })
-      .code(200);
-  }
-
-  async editStockHandler(request, h) {
-    this._validator.validateProductsParams(request.params);
-    this._validator.validateEditStock(request.payload);
-
-    const { id } = request.params;
-    const { amount } = request.payload;
-
-    const newAmount = await this._service.editStock({ id, amount });
-    return h
-      .response({
-        status: "success",
-        message: "Stock berhasil diubah",
-        data: {
-          newAmount,
-        },
-      })
-      .code(200);
-  }
-
-  async editPriceHandler(request, h) {
-    this._validator.validateProductsParams(request.params);
-    this._validator.validateEditPrice(request.payload);
-
-    const { id } = request.params;
-    const { price } = request.payload;
-
-    const newPrice = await this._service.editPrice({ id, price });
-
-    return h
-      .response({
-        status: "success",
-        message: "Harga berhasil diubah",
-        data: {
-          newPrice,
         },
       })
       .code(200);

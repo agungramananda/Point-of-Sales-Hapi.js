@@ -9,22 +9,41 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("stock", {
-    product_id: {
+  pgm.createTable("customer_vouchers", {
+    id: "id",
+    customer_id: {
       type: "INT",
       notNull: true,
-      unique: true,
-      references: '"products"',
+      references: "customer",
       onDelete: "CASCADE",
-      primaryKey: true,
     },
-    amount: { type: "INT", notNull: true },
-    safety_stock: { type: "INT", notNull: true, default: 0 },
-    maximum_stock: { type: "INT", notNull: true, default: 0 },
+    voucher_id: {
+      type: "INT",
+      notNull: true,
+      references: "vouchers",
+      onDelete: "CASCADE",
+    },
+    is_used: {
+      type: "BOOLEAN",
+      notNull: true,
+      default: false,
+    },
+    expiry_date: {
+      type: "TIMESTAMP",
+      notNull: true,
+    },
+    created_at: {
+      type: "TIMESTAMP",
+      notNull: true,
+      default: pgm.func("current_timestamp"),
+    },
     updated_at: {
       type: "TIMESTAMP",
       notNull: true,
       default: pgm.func("current_timestamp"),
+    },
+    deleted_at: {
+      type: "TIMESTAMP",
     },
   });
 };
@@ -35,5 +54,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropTable("stock");
+  pgm.dropTable("customer_vouchers");
 };

@@ -15,6 +15,8 @@ const TransactionsPayloadSchema = Joi.object({
     )
     .required(),
   payment: Joi.number().integer().required(),
+  voucher: Joi.string().optional().allow(null),
+  points_used: Joi.number().integer().optional().allow(null),
 });
 
 const TransactionsQuerySchema = Joi.object({

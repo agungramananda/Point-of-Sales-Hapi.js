@@ -208,11 +208,14 @@ class DiscountService {
 
         const checkProductCost = {
           text: `
-          select p.price
-          from purchase p
-          where p.product_id = 1 and p.remaining_stock > 0 and (p.expiry_date is null or p.expiry_date>current_timestamp) order by p.created_at asc
+          select pd.cost
+          from purchase_details pd 
+          left join purchase p on p.id = pd.purchase_id
+          where pd.product_id = $1 and  p.status_id = 2 and pd.remaining_stock >0 and (pd.expiry_date is null or pd.expiry_date >current_timestamp) 
+          order by p.created_at asc
           limit 1
           `,
+          values: [product.id],
         };
         const productCost = await this._pool.query(checkProductCost);
 
@@ -223,7 +226,7 @@ class DiscountService {
         }
 
         const margin =
-          checkProductResult.rows[0].price - productCost.rows[0].price;
+          checkProductResult.rows[0].price - productCost.rows[0].cost;
         console.log(margin);
         const discountValue = product.discount_value;
         if (discount_type_id == 1) {
@@ -401,11 +404,14 @@ class DiscountService {
 
         const checkProductCost = {
           text: `
-          select p.price
-          from purchase p
-          where p.product_id = 1 and p.remaining_stock > 0 and (p.expiry_date is null or p.expiry_date>current_timestamp) order by p.created_at asc
+          select pd.cost
+          from purchase_details pd 
+          left join purchase p on p.id = pd.purchase_id
+          where pd.product_id = $1 and  p.status_id = 2 and pd.remaining_stock >0 and (pd.expiry_date is null or pd.expiry_date >current_timestamp) 
+          order by p.created_at asc
           limit 1
           `,
+          values: [product.id],
         };
         const productCost = await this._pool.query(checkProductCost);
 
@@ -416,7 +422,7 @@ class DiscountService {
         }
 
         const margin =
-          checkProductResult.rows[0].price - productCost.rows[0].price;
+          checkProductResult.rows[0].price - productCost.rows[0].cost;
         console.log(margin);
         const discountValue = product.discount_value;
         if (discount_type_id == 1) {

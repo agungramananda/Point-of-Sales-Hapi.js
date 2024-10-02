@@ -16,21 +16,40 @@ exports.up = (pgm) => {
       returns: "trigger",
       language: "plpgsql",
     },
-    `BEGIN
+    `
+    DECLARE
+      purchase_detail RECORD;
+    BEGIN
       IF (TG_TABLE_NAME = 'purchase') THEN
-        INSERT INTO stockmovement(product_id, movement_type, quantity_change, references_id)
-        VALUES(NEW.product_id, 'PURCHASE', NEW.quantity, NEW.id);
+        IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+          IF (NEW.status_id = 2) THEN
+            FOR purchase_detail IN
+              SELECT product_id, quantity FROM purchase_details WHERE purchase_id = NEW.id
+            LOOP
+              INSERT INTO stockmovement(product_id, movement_type, quantity_change, references_id)
+              VALUES(purchase_detail.product_id, 'PURCHASE', purchase_detail.quantity, NEW.id);
+            END LOOP;
+          ELSIF (NEW.status_id = 3 AND OLD.status_id = 2) THEN
+            FOR purchase_detail IN
+              SELECT product_id, quantity FROM purchase_details WHERE purchase_id = NEW.id
+            LOOP
+              INSERT INTO stockmovement(product_id, movement_type, quantity_change, references_id)
+              VALUES(purchase_detail.product_id, 'RETURN', purchase_detail.quantity, NEW.id);
+            END LOOP;
+          END IF;
+        END IF;
       ELSIF (TG_TABLE_NAME = 'transaction_details') THEN
         INSERT INTO stockmovement(product_id, movement_type, quantity_change, references_id)
         VALUES(NEW.product_id, 'TRANSACTION', NEW.quantity, NEW.transaction_id);
       END IF;
-    RETURN NEW;
-  END;`
+      RETURN NEW;
+    END;
+    `
   );
 
   pgm.createTrigger("purchase", "stock_movement_trigger_in", {
     when: "AFTER",
-    operation: "INSERT",
+    operation: ["INSERT", "UPDATE"],
     function: "log_to_stockmovement",
     level: "ROW",
   });

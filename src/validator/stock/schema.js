@@ -1,8 +1,8 @@
 const Joi = require("joi");
 
 const editStockSettigsSchema = Joi.object({
-  maximumStockLevel: Joi.number().required(),
-  minimumStockLevel: Joi.number().required(),
+  safetyStock: Joi.number().required(),
+  maximumStock: Joi.number().required(),
 });
 
 const StockParamSchema = Joi.object({

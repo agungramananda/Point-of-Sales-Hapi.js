@@ -17,11 +17,18 @@ exports.up = (pgm) => {
       language: "plpgsql",
     },
     `
-    BEGIN
-      UPDATE stock
-      SET amount = amount + NEW.quantity
-      WHERE product_id = NEW.product_id;
-
+      DECLARE
+      purchase_detail RECORD;
+      BEGIN
+      IF NEW.status_id = 2 THEN
+        FOR purchase_detail IN
+          SELECT product_id, quantity FROM purchase_details WHERE purchase_id = NEW.id
+        LOOP
+          UPDATE stock
+          SET amount = amount + purchase_detail.quantity
+          WHERE product_id = purchase_detail.product_id;
+        END LOOP;
+      END IF;
       RETURN NEW;
     END;
     `
@@ -29,7 +36,7 @@ exports.up = (pgm) => {
 
   pgm.createTrigger("purchase", "add_stock_after_purchase_trigger", {
     when: "AFTER",
-    operation: "INSERT",
+    operation: ["INSERT", "UPDATE"],
     function: "add_stock_after_purchase",
     level: "ROW",
   });

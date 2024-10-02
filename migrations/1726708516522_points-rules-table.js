@@ -23,10 +23,15 @@ exports.up = (pgm) => {
       type: "INT",
       notNull: true,
     },
+    points_usage: {
+      type: "INT",
+      notNull: true,
+      //0 for balance and 1 for redeem voucher
+    },
   });
 
   pgm.sql(
-    `insert into points_rules(min_amount_of_transaction,amount_of_spent, points) values (0,1000, 1)`
+    `insert into points_rules(min_amount_of_transaction,amount_of_spent, points,points_usage) values (0,1000, 1,0)`
   );
 };
 

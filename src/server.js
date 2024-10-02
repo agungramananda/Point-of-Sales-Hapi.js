@@ -53,6 +53,10 @@ const stock = require("./api/stock");
 const StockService = require("./services/postgres/StockService");
 const StockValidator = require("./validator/stock");
 
+const vouchers = require("./api/vouchers");
+const VoucherService = require("./services/postgres/VoucherService");
+const VouchersValidator = require("./validator/vouchers");
+
 const notifications = require("./api/notifications");
 
 const auth = require("./api/auth");
@@ -69,7 +73,6 @@ const init = async () => {
   const productsService = new ProductsService();
   const usersService = new UsersService();
   const supplierService = new SupplierService();
-  const purchaseService = new PurchaseService();
   const authService = new AuthService();
   const reportService = new ReportService();
   const rolesService = new RolesService();
@@ -79,14 +82,21 @@ const init = async () => {
   const stockService = new StockService();
   const redisService = new RedisService();
   const ioService = new IoService(redisService);
+  const purchaseService = new PurchaseService(
+    productsService,
+    supplierService,
+    stockService
+  );
+  const voucherService = new VoucherService(customerService, membershipService);
+
   const transactionsService = new TransactionsService(
     productsService,
     usersService,
     customerService,
     membershipService,
+    voucherService,
     ioService
   );
-
   const server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
@@ -275,6 +285,13 @@ const init = async () => {
       plugin: notifications,
       options: {
         service: redisService,
+      },
+    },
+    {
+      plugin: vouchers,
+      options: {
+        service: voucherService,
+        validator: VouchersValidator,
       },
     },
   ]);

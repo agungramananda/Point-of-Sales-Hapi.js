@@ -14,7 +14,7 @@ class ProductsService {
   async getProducts({ orderBy, sortBy, category, name, page, limit }) {
     let query = `
         SELECT 
-        p.id, p.product_name, p.price, p.category_id, c.category, s.amount
+        p.id, p.product_name, p.category_id, c.category, s.amount, s.safety_stock, s.maximum_stock
         FROM
         products p
         LEFT JOIN
@@ -57,7 +57,7 @@ class ProductsService {
     const query = {
       text: `
         SELECT 
-        p.id, p.product_name, p.price, p.category_id, c.category, s.amount
+        p.id, p.product_name, p.category_id, c.category, s.amount, s.safety_stock, s.maximum_stock
         FROM
         products p
         LEFT JOIN
@@ -73,7 +73,7 @@ class ProductsService {
       const result = await this._pool.query(query);
 
       if (!result.rows[0]) {
-        throw new NotFoundError("Product tidak ada");
+        throw new NotFoundError(`Product dengan id ${id} tidak ditemukan`);
       }
 
       return result.rows;
@@ -82,7 +82,13 @@ class ProductsService {
     }
   }
 
-  async addProduct({ product_name, price, category_id }) {
+  async addProduct({
+    product_name,
+    category_id,
+    price,
+    safety_stock,
+    maximum_stock,
+  }) {
     const checkQuery = {
       text: "SELECT id FROM products WHERE product_name = $1 AND deleted_at IS NULL",
       values: [product_name],
@@ -94,6 +100,7 @@ class ProductsService {
     };
 
     try {
+      await this._pool.query("BEGIN");
       const isDuplicate = await this._pool.query(checkQuery);
       if (isDuplicate.rows[0]) {
         throw new InvariantError(
@@ -104,18 +111,14 @@ class ProductsService {
       if (isCategory.rows.length === 0) {
         throw new NotFoundError("Category tidak ada");
       }
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
 
-    try {
       const productQuery = {
         text: `
-          INSERT INTO products (product_name,price,category_id)
+          INSERT INTO products (product_name,category_id, price)
           VALUES ($1, $2, $3)
-          RETURNING id, product_name,price,category_id
+          RETURNING id, product_name, price, category_id
         `,
-        values: [product_name, price, category_id],
+        values: [product_name, category_id, price],
       };
 
       const insertProduct = await this._pool.query(productQuery);
@@ -126,33 +129,36 @@ class ProductsService {
 
       const stockQuery = {
         text: `
-          INSERT INTO stock (product_id, amount)
-          VALUES ($1, $2)
+          INSERT INTO stock (product_id, amount, safety_stock, maximum_stock)
+          VALUES ($1, $2, $3, $4)
           RETURNING amount
         `,
-        values: [insertProduct.rows[0].id, 0],
+        values: [insertProduct.rows[0].id, 0, safety_stock, maximum_stock],
       };
 
       await this._pool.query(stockQuery);
+
+      await this._pool.query("COMMIT");
 
       const result = [{ ...insertProduct.rows[0] }];
 
       return result;
     } catch (error) {
+      await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);
     }
   }
 
-  async editProduct({ id, product_name, price, category_id }) {
+  async editProduct({ id, product_name, category_id }) {
     const updated_at = new Date();
     const productQuery = {
       text: `
         UPDATE products 
-        SET product_name = $1, price = $2, category_id = $3, updated_at = $4
-        WHERE id = $5 AND deleted_at IS NULL
+        SET product_name = $1, category_id = $2, updated_at = $3
+        WHERE id = $4 AND deleted_at IS NULL
         RETURNING id, product_name,price,category_id
       `,
-      values: [product_name, price, category_id, updated_at, id],
+      values: [product_name, category_id, updated_at, id],
     };
 
     const checkQuery = {
@@ -208,67 +214,6 @@ class ProductsService {
         throw new NotFoundError("Product tidak ditemukan");
       }
 
-      return result.rows;
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
-  }
-
-  async editStock({ id, amount }) {
-    const checkQuery = {
-      text: "SELECT id FROM products WHERE id = $1 AND deleted_at IS NULL",
-      values: [id],
-    };
-
-    try {
-      const product = await this._pool.query(checkQuery);
-      if (product.rows.length == 0) {
-        throw new NotFoundError("Produk tidak ada");
-      }
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
-
-    const query = {
-      text: "UPDATE stock SET amount = $1 WHERE product_id = $2 RETURNING amount",
-      values: [amount, id],
-    };
-    try {
-      const result = await this._pool.query(query);
-      return result.rows;
-    } catch (error) {
-      return new InvariantError(error.message);
-    }
-  }
-
-  async editPrice({ id, price }) {
-    const updated_at = new Date();
-
-    const checkQuery = {
-      text: "SELECT id FROM products WHERE id = $1 AND deleted_at IS NULL",
-      values: [id],
-    };
-
-    try {
-      const product = await this._pool.query(checkQuery);
-      if (product.rows.length == 0) {
-        throw new NotFoundError("Produk tidak ada");
-      }
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
-
-    const query = {
-      text: "UPDATE products SET price = $1, updated_at = $2 WHERE id = $3 AND deleted_at IS NULL RETURNING product_name, price",
-      values: [price, updated_at, id],
-    };
-
-    try {
-      const result = await this._pool.query(query);
-
-      if (result.rows.length == 0) {
-        return new NotFoundError("Product tidak ada");
-      }
       return result.rows;
     } catch (error) {
       throw new InvariantError(error.message);

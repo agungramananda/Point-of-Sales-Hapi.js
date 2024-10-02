@@ -45,7 +45,8 @@ class TransactionsHandler {
 
   async postTransactionHandler(request, h) {
     this._validator.validateTransactionsPayload(request.payload);
-    const { customer_id, items, payment } = request.payload;
+    const { customer_id, items, payment, voucher, points_used } =
+      request.payload;
 
     const user_id = request.auth.credentials.id;
 
@@ -54,6 +55,8 @@ class TransactionsHandler {
       customer_id,
       items,
       payment,
+      voucher,
+      points_used,
     });
 
     return h

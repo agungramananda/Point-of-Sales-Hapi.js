@@ -59,30 +59,6 @@ const routes = (handler) => [
       },
     },
   },
-  {
-    method: "PUT",
-    path: "/products/stock/{id}",
-    handler: handler.editStockHandler,
-    config: {
-      plugins: {
-        rbac: {
-          permission: ["UPDATE_PRODUCT"],
-        },
-      },
-    },
-  },
-  {
-    method: "PUT",
-    path: "/products/price/{id}",
-    handler: handler.editPriceHandler,
-    config: {
-      plugins: {
-        rbac: {
-          permission: ["UPDATE_PRODUCT"],
-        },
-      },
-    },
-  },
 ];
 
 module.exports = routes;

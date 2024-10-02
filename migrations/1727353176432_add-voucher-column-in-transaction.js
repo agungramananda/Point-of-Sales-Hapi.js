@@ -9,10 +9,20 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.addColumn("purchase", {
-    received_date: {
-      type: "timestamp",
-      notNull: true,
+  pgm.addColumn("transactions", {
+    voucher_id: {
+      type: "INT",
+      notNull: false,
+      references: "vouchers",
+      onDelete: "CASCADE",
+    },
+    voucher_discount: {
+      type: "INT",
+      notNull: false,
+    },
+    points_used: {
+      type: "INT",
+      notNull: false,
     },
   });
 };
@@ -23,5 +33,5 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropColumns("purchase", ["received_date"]);
+  pgm.dropColumn("transactions", "voucher_id");
 };
