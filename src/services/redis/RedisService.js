@@ -31,15 +31,11 @@ class RedisService {
   }
 
   async saveNotification(notification) {
-    console.log(notification);
     try {
-      await this._client.HSET(
-        notification.id,
-        "title",
-        notification.title,
-        "message",
-        notification.message
-      );
+      await this._client.HSET(notification.id, {
+        title: notification.title,
+        message: notification.message,
+      });
       await this._client.expire(notification.id, 7 * 24 * 60 * 60); // Set expiration to 7 days
     } catch (err) {
       console.error("Error saving notification to Redis:", err);
