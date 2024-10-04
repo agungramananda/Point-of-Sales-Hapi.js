@@ -15,7 +15,10 @@ const searchName = ({ keyword }, table, column, sql) => {
     const check = pool.query(checkQuery);
     if (check.rows.length === 0) {
       throw new InvariantError(
-        "Gagal mendapatkan produk. Nama produk tidak valid"
+        `Failed to retrieve data. ${keyword} does not exist in ${table.slice(
+          0,
+          -1
+        )}`
       );
     }
   } catch (error) {}

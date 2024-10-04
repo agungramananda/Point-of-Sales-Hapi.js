@@ -19,6 +19,7 @@ class PurchaseHandler {
   }
 
   async getPurchaseHandler(request, h) {
+    this._validator.validatePurchaseQuery(request.query);
     const { supplier, startDate, endDate, page, limit } = request.query;
     const purchases = await this._service.getPurchase({
       supplier,
@@ -29,13 +30,13 @@ class PurchaseHandler {
     });
     return h.response({
       status: "success",
-      data: {
-        purchases,
-      },
+      data: purchases.data,
+      page_info: purchases.page_info,
     });
   }
 
   async getPurchaseDetailsByPurchaseIdHandler(request, h) {
+    this._validator.validatePurchaseParams(request.params);
     const { id } = request.params;
     const purchaseDetails = await this._service.getPurchaseDetailsByPurchaseId(
       id
@@ -49,33 +50,24 @@ class PurchaseHandler {
   }
 
   async addPurchaseHandler(request, h) {
+    this._validator.validatePurchasePayload(request.payload);
     const purchaseId = await this._service.addPurchase(request.payload);
     return h
       .response({
         status: "success",
-        message: "Pembelian berhasil ditambahkan",
-        data: {
-          purchaseId,
-        },
+        message: "Purchase added successfully",
       })
       .code(201);
   }
 
   async editPurchaseHandler(request, h) {
+    this._validator.validatePurchaseParams(request.params);
+    this._validator.validatePurchasePayload(request.payload);
     const { id } = request.params;
     await this._service.editPurchase({ id, ...request.payload });
     return h.response({
       status: "success",
       message: "Purchase updated successfully",
-    });
-  }
-
-  async editPurchaseDetailsHandler(request, h) {
-    const { id } = request.params;
-    await this._service.editPurchaseDetails({ id, ...request.payload });
-    return h.response({
-      status: "success",
-      message: "Purchase details updated successfully",
     });
   }
 

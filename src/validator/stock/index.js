@@ -12,14 +12,8 @@ const StockValidator = {
       throw new InvariantError(validationResults.error.message);
     }
   },
-  validaateEditStockSettings: (payload) => {
+  validateEditStockSettings: (payload) => {
     const validationResults = editStockSettigsSchema.validate(payload);
-    if (validationResults.error) {
-      throw new InvariantError(validationResults.error.message);
-    }
-  },
-  validateStockQuery: (query) => {
-    const validationResults = StockQuerySchema.validate(query);
     if (validationResults.error) {
       throw new InvariantError(validationResults.error.message);
     }

@@ -95,7 +95,8 @@ const init = async () => {
     customerService,
     membershipService,
     voucherService,
-    ioService
+    ioService,
+    redisService
   );
   const server = Hapi.server({
     port: process.env.PORT,

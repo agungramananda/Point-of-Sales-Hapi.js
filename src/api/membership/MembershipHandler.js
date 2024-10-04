@@ -11,7 +11,7 @@ class MembershipHandler {
   async getMembershipHandler(request, h) {
     this._validator.validateMembershipQuery(request.query);
     const { membership_category, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getMembership({
+    const { data, page_info } = await this._service.getMembership({
       membership_category,
       page,
       limit,
@@ -20,7 +20,7 @@ class MembershipHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -48,10 +48,7 @@ class MembershipHandler {
     return h
       .response({
         status: "success",
-        message: "Membership berhasil ditambahkan",
-        data: {
-          membershipId,
-        },
+        message: "Membership successfully added",
       })
       .code(201);
   }
@@ -69,7 +66,7 @@ class MembershipHandler {
     return h
       .response({
         status: "success",
-        message: "Membership berhasil diperbarui",
+        message: "Membership successfully updated",
       })
       .code(200);
   }
@@ -81,7 +78,7 @@ class MembershipHandler {
     return h
       .response({
         status: "success",
-        message: "Membership berhasil dihapus",
+        message: "Membership successfully deleted",
       })
       .code(200);
   }
@@ -110,7 +107,7 @@ class MembershipHandler {
     return h
       .response({
         status: "success",
-        message: "Points Rules berhasil diperbarui",
+        message: "Points Rules successfully updated",
       })
       .code(200);
   }

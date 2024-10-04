@@ -12,15 +12,12 @@ class CategoriesHandler {
 
     const { category } = request.payload;
 
-    const newCategory = await this._service.addCategory(category);
+    await this._service.addCategory(category);
 
     return h
       .response({
         status: "success",
-        message: "Kategori berhasil ditambahkan",
-        data: {
-          newCategory,
-        },
+        message: "Category successfully added",
       })
       .code(201);
   }
@@ -42,7 +39,7 @@ class CategoriesHandler {
       .response({
         status: "success",
         data: categories.data,
-        infoPage: categories.infoPage,
+        page_info: categories.page_info,
       })
       .code(200);
   }
@@ -54,15 +51,12 @@ class CategoriesHandler {
     const { id } = request.params;
     const { category } = request.payload;
 
-    const editedCategory = await this._service.editCategory(id, category);
+    await this._service.editCategory(id, category);
 
     return h
       .response({
         status: "success",
-        message: "Kategori berhasil diubah",
-        data: {
-          editedCategory,
-        },
+        message: "Category successfully edited",
       })
       .code(200);
   }
@@ -72,13 +66,12 @@ class CategoriesHandler {
 
     const { id } = request.params;
 
-    const deletedCategory = await this._service.deleteCategory(id);
+    await this._service.deleteCategory(id);
 
     return h
       .response({
         status: "success",
-        message: "Kategori berhasil dihapus",
-        deletedCategory,
+        message: "Category successfully deleted",
       })
       .code(200);
   }

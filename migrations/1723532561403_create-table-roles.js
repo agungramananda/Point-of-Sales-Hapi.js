@@ -16,6 +16,8 @@ exports.up = (pgm) => {
       notNull: true,
     },
   });
+
+  pgm.createIndex("roles", "role");
 };
 
 /**
@@ -24,5 +26,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("roles", "role");
   pgm.dropTable("roles");
 };

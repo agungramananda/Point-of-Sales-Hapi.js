@@ -4,12 +4,18 @@ const ProductsParamsSchema = Joi.object({
   id: Joi.string().min(1).required(),
 });
 
-const ProductsPayloadSchema = Joi.object({
+const ProductsAddSchema = Joi.object({
   product_name: Joi.string().required(),
   category_id: Joi.number().integer().required(),
   price: Joi.number().integer().required(),
   safety_stock: Joi.number().integer().required(),
   maximum_stock: Joi.number().integer().required(),
+});
+
+const ProductsUpdateSchema = Joi.object({
+  product_name: Joi.string().optional(),
+  category_id: Joi.number().integer().optional(),
+  price: Joi.number().integer().optional(),
 });
 
 const ProductSortQuerySchema = Joi.object({
@@ -31,6 +37,7 @@ const ProductSortQuerySchema = Joi.object({
 
 module.exports = {
   ProductsParamsSchema,
-  ProductsPayloadSchema,
+  ProductsAddSchema,
+  ProductsUpdateSchema,
   ProductSortQuerySchema,
 };

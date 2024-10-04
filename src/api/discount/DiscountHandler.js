@@ -10,7 +10,7 @@ class DiscountHandler {
   async getDiscountsHandler(request, h) {
     this._validator.validateDiscountQuery(request.query);
     const { code, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getDiscounts({
+    const { data, page_info } = await this._service.getDiscounts({
       code,
       page,
       limit,
@@ -19,7 +19,7 @@ class DiscountHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -56,10 +56,7 @@ class DiscountHandler {
     });
     return h.response({
       status: "success",
-      message: "Diskon berhasil ditambahkan",
-      data: {
-        discountId,
-      },
+      message: "Discount successfully added",
     });
   }
 
@@ -87,7 +84,7 @@ class DiscountHandler {
     });
     return h.response({
       status: "success",
-      message: "Diskon berhasil diperbarui",
+      message: "Discount successfully edited",
     });
   }
 
@@ -97,7 +94,7 @@ class DiscountHandler {
     await this._service.deleteDiscount(id);
     return h.response({
       status: "success",
-      message: "Diskon berhasil dihapus",
+      message: "Discount successfully deleted",
     });
   }
 }

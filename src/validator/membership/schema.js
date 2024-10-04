@@ -2,8 +2,8 @@ const Joi = require("joi");
 
 const MembershipQuerySchema = Joi.object({
   membership_category: Joi.string().allow(""),
-  page: Joi.number().integer().default(1),
-  limit: Joi.number().integer().default(25),
+  page: Joi.number().integer().default(1).allow(""),
+  limit: Joi.number().integer().default(25).allow(""),
 });
 
 const MembershipPayloadSchema = Joi.object({

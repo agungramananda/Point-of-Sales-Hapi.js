@@ -2,6 +2,7 @@ const { Pool } = require("pg");
 const { searchName } = require("../../utils/searchName");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const InvariantError = require("../../exceptions/InvariantError");
+const NotFoundError = require("../../exceptions/NotFoundError");
 
 class RolesService {
   constructor() {
@@ -9,10 +10,10 @@ class RolesService {
   }
 
   async getRoles({ name, page, limit }) {
-    let query = `select r.id, r.role from roles r where r.deleted_at is null`;
+    let query = `SELECT r.id, r.role FROM roles r WHERE r.deleted_at IS NULL`;
     query = await searchName({ keyword: name }, "roles", "r.role", query);
     const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, query);
+    const page_info = await getMaxPage(p, query);
 
     try {
       const result = await this._pool.query(
@@ -20,7 +21,7 @@ class RolesService {
       );
       return {
         data: result.rows,
-        pageInfo: infoPage,
+        page_info: page_info,
       };
     } catch (error) {
       throw new InvariantError(error.message);
@@ -30,29 +31,30 @@ class RolesService {
   async getRoleById(id) {
     const query = {
       text: `
-      SELECT 
-      r.role,
-      array_agg(p.permission) AS permissions
-      FROM 
-      roles r
-      LEFT JOIN 
-      role_permissions rp ON r.id = rp.role_id
-      LEFT JOIN 
-      permissions p ON rp.permission_id = p.id
-      WHERE 
-      r.deleted_at IS NULL
-      AND r.id = $1
-      GROUP BY 
-      r.role;`,
+        SELECT 
+          r.role,
+          array_agg(p.permission) AS permissions
+        FROM 
+          roles r
+        LEFT JOIN 
+          role_permissions rp ON r.id = rp.role_id
+        LEFT JOIN 
+          permissions p ON rp.permission_id = p.id
+        WHERE 
+          r.deleted_at IS NULL
+          AND r.id = $1
+        GROUP BY 
+          r.role;
+      `,
       values: [id],
     };
 
     try {
       const result = await this._pool.query(query);
       if (!result.rows[0]) {
-        throw new InvariantError("Role tidak ditemukan");
+        throw new NotFoundError("Role not found");
       }
-      return result.rows;
+      return result.rows[0];
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -72,32 +74,20 @@ class RolesService {
   }
 
   async addRole({ role, permissionsList }) {
-    const checkQuery = {
-      text: "SELECT id FROM roles WHERE role = $1 AND deleted_at IS NULL",
-      values: [role],
-    };
-
-    try {
-      const check = await this._pool.query(checkQuery);
-      if (check.rows.length > 0) {
-        throw new InvariantError("Role sudah terdaftar");
-      }
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
+    await this._validateRole(role);
 
     await this._pool.query("BEGIN");
 
     try {
       const newRole = await this._pool.query(
-        "insert into roles (role) values ($1) returning id",
+        "INSERT INTO roles (role) VALUES ($1) RETURNING id",
         [role]
       );
       const roleId = newRole.rows[0].id;
 
       for (const permission of permissionsList) {
         await this._pool.query(
-          "insert into role_permissions (role_id, permission_id) values ($1, $2)",
+          "INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)",
           [roleId, permission]
         );
       }
@@ -110,19 +100,7 @@ class RolesService {
   }
 
   async editRole({ id, role, permissionsList }) {
-    const checkQuery = {
-      text: "SELECT id FROM roles WHERE role = $1 AND deleted_at IS NULL AND id != $2",
-      values: [role, id],
-    };
-
-    try {
-      const check = await this._pool.query(checkQuery);
-      if (check.rows.length > 0) {
-        throw new InvariantError("Role sudah terdaftar");
-      }
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
+    await this._validateRole(role, id);
 
     await this._pool.query("BEGIN");
 
@@ -132,7 +110,7 @@ class RolesService {
         [role, id]
       );
       if (!editedRole.rows[0]) {
-        throw new InvariantError("Role gagal diubah");
+        throw new NotFoundError("Failed to update role");
       }
 
       const currentPermissions = await this._pool.query(
@@ -171,17 +149,35 @@ class RolesService {
   async deleteRole(id) {
     try {
       const check = await this._pool.query(
-        "SELECT id FROM roles WHERE id = $1 AND deleted_at is not null",
+        "SELECT id FROM roles WHERE id = $1 AND deleted_at IS NOT NULL",
         [id]
       );
       if (check.rows.length !== 0) {
-        throw new InvariantError("Role tidak ditemukan");
+        throw new NotFoundError("Role not found");
       }
       const deletedRole = await this._pool.query(
-        "UPDATE roles SET deleted_at = current_timestamp WHERE id = $1 and deleted_at is null",
+        "UPDATE roles SET deleted_at = current_timestamp WHERE id = $1 AND deleted_at IS NULL RETURNING id",
         [id]
       );
       return deletedRole.rows;
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
+
+  async _validateRole(role, id = null) {
+    const checkQuery = {
+      text: `SELECT id FROM roles WHERE role = $1 AND deleted_at IS NULL ${
+        id ? "AND id != $2" : ""
+      }`,
+      values: id ? [role, id] : [role],
+    };
+
+    try {
+      const check = await this._pool.query(checkQuery);
+      if (check.rows.length > 0) {
+        throw new InvariantError("Role already registered");
+      }
     } catch (error) {
       throw new InvariantError(error.message);
     }

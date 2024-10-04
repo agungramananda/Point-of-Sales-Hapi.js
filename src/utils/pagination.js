@@ -21,22 +21,22 @@ const getMaxPage = async ({ limit, page }, query) => {
 
     if (totalItems === 0) {
       return {
-        currentPage: 1,
+        current_page: 1,
         limit: limit,
-        totalItems: 0,
-        totalPages: 1,
+        total_items: 0,
+        total_pages: 1,
       };
     }
 
     if (maxPage >= page) {
       return {
-        currentPage: page,
+        current_page: page,
         limit: limit,
-        totalItems: totalItems,
-        totalPages: maxPage,
+        total_items: totalItems,
+        total_pages: maxPage,
       };
     } else {
-      throw new InvariantError(`Halaman hanya sampai ${maxPage}`);
+      throw new InvariantError(`Page only goes up to ${maxPage}`);
     }
   } catch (error) {
     throw new Error(error);

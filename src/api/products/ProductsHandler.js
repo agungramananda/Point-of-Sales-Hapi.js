@@ -25,7 +25,7 @@ class ProductsHandler {
       .response({
         status: "success",
         data: products.data,
-        infoPage: products.infoPage,
+        page_info: products.page_info,
       })
       .code(200);
   }
@@ -47,7 +47,7 @@ class ProductsHandler {
   }
 
   async postProductHandler(request, h) {
-    this._validator.validateProductsPayload(request.payload);
+    this._validator.validateAddProduct(request.payload);
     const { product_name, price, category_id, safety_stock, maximum_stock } =
       request.payload;
 
@@ -62,21 +62,18 @@ class ProductsHandler {
     return h
       .response({
         status: "success",
-        message: "Product berhasil ditambahkan",
-        data: {
-          newProduct,
-        },
+        message: "Product successfully added",
       })
       .code(201);
   }
 
   async putProductByIDHandler(request, h) {
     this._validator.validateProductsParams(request.params);
-    this._validator.validateProductsPayload(request.payload);
+    this._validator.validateUpdateProduct(request.payload);
     const { id } = request.params;
     const { product_name, category_id } = request.payload;
 
-    const editedProduct = await this._service.editProduct({
+    await this._service.editProduct({
       id,
       product_name,
       category_id,
@@ -85,10 +82,7 @@ class ProductsHandler {
     return h
       .response({
         status: "success",
-        message: "Product berhasil diubah",
-        data: {
-          editedProduct,
-        },
+        message: "Product successfully updated",
       })
       .code(200);
   }
@@ -98,15 +92,12 @@ class ProductsHandler {
 
     const { id } = request.params;
 
-    const deletedProduct = await this._service.deleteProduct(id);
+    await this._service.deleteProduct(id);
 
     return h
       .response({
         status: "success",
-        message: "Product berhasil dihapus",
-        data: {
-          deletedProduct,
-        },
+        message: "Product successfully deleted",
       })
       .code(200);
   }

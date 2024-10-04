@@ -1,9 +1,9 @@
 const { Pool } = require("pg");
 const InvariantError = require("../../exceptions/InvariantError");
+const NotFoundError = require("../../exceptions/NotFoundError");
 const { searchName } = require("../../utils/searchName");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { beetwenDate } = require("../../utils/betweenDate");
-const NotFoundError = require("../../exceptions/NotFoundError");
 
 class PurchaseService {
   constructor(productService, supplierService, stockService) {
@@ -13,16 +13,19 @@ class PurchaseService {
     this._stockService = stockService;
   }
 
-  async getPurchaseStatus() {
-    const query = {
-      text: `SELECT * FROM purchase_status`,
-    };
+  async _executeQuery(query) {
     try {
       const result = await this._pool.query(query);
-      return result.rows;
+      return result;
     } catch (error) {
       throw new InvariantError(error.message);
     }
+  }
+
+  async getPurchaseStatus() {
+    const query = { text: `SELECT * FROM purchase_status` };
+    const result = await this._executeQuery(query);
+    return result.rows;
   }
 
   async getPurchaseStatusById(id) {
@@ -30,146 +33,115 @@ class PurchaseService {
       text: `SELECT * FROM purchase_status WHERE id = $1`,
       values: [id],
     };
-    try {
-      const result = await this._pool.query(query);
-      if (result.rows.length === 0) {
-        throw new NotFoundError("purchase status not found");
-      }
-      return result.rows[0];
-    } catch (error) {
-      throw new InvariantError(error.message);
+    const result = await this._executeQuery(query);
+    if (result.rows.length === 0) {
+      throw new NotFoundError("Purchase status not found");
     }
+    return result.rows[0];
   }
 
   async getPurchase({ supplier, startDate, endDate, page, limit }) {
-    try {
-      let query = `
-    select p.id,p.supplier_id , s.supplier_name, p.purchase_date, p.total_cost , ps.status , p.received_date 
-    from purchase p 
-    left join suppliers s on p.supplier_id = s.id 
-    left join purchase_status ps on p.status_id = ps.id
-    where p.purchase_date is not null
+    let query = `
+      SELECT p.id, p.supplier_id, s.supplier_name, p.purchase_date, p.total_cost, ps.status, p.received_date 
+      FROM purchase p 
+      LEFT JOIN suppliers s ON p.supplier_id = s.id 
+      LEFT JOIN purchase_status ps ON p.status_id = ps.id
+      WHERE p.purchase_date IS NOT NULL
     `;
 
-      query = searchName(
-        { keyword: supplier },
-        "suppliers s",
-        "s.supplier_name",
-        query
-      );
+    query = searchName(
+      { keyword: supplier },
+      "suppliers s",
+      "s.supplier_name",
+      query
+    );
 
-      if (startDate && endDate) {
-        if (startDate > endDate) {
-          throw new InvariantError(
-            "startDate tidak boleh lebih besar dari endDate"
-          );
-        }
-        if (startDate === endDate) {
-          endDate.setDate(endDate.getDate() + 1);
-        }
-        query = beetwenDate({ startDate, endDate }, "p.purchase_date", query);
+    if (startDate && endDate) {
+      if (startDate > endDate) {
+        throw new InvariantError("Start date cannot be greater than end date");
       }
-
-      const p = pagination({ limit, page });
-      const infoPage = await getMaxPage(p, query);
-      query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
-      const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
-    } catch (error) {
-      throw new InvariantError(error.message);
+      if (startDate === endDate) {
+        endDate.setDate(endDate.getDate() + 1);
+      }
+      query = beetwenDate({ startDate, endDate }, "p.purchase_date", query);
     }
+
+    const p = pagination({ limit, page });
+    const page_info = await getMaxPage(p, query);
+    query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
+    const result = await this._executeQuery(query);
+    return { data: result.rows, page_info };
   }
 
   async getPurchaseById(id) {
     const query = {
       text: `
-      select p.id,p.supplier_id , s.supplier_name, p.purchase_date, p.total_cost , ps.status , p.received_date
-      from purchase p
-      left join suppliers s on p.supplier_id = s.id
-      left join purchase_status ps on p.status_id = ps.id
-      where p.id = $1
-    `,
+        SELECT p.id, p.supplier_id, s.supplier_name, p.purchase_date, p.total_cost, ps.status, p.received_date
+        FROM purchase p
+        LEFT JOIN suppliers s ON p.supplier_id = s.id
+        LEFT JOIN purchase_status ps ON p.status_id = ps.id
+        WHERE p.id = $1
+      `,
       values: [id],
     };
-    try {
-      const result = await this._pool.query(query);
-      if (result.rows.length === 0) {
-        throw new InvariantError("purchase not found");
-      }
-      return result.rows[0];
-    } catch (error) {
-      throw new InvariantError(error.message);
+    const result = await this._executeQuery(query);
+    if (result.rows.length === 0) {
+      throw new NotFoundError("Purchase not found");
     }
+    return result.rows[0];
   }
 
   async getPurchaseDetailsByPurchaseId(id) {
     const query = {
-      text: `
-        select * from purchase_details pd where pd.purchase_id = $1
-      `,
+      text: `SELECT * FROM purchase_details pd WHERE pd.purchase_id = $1`,
       values: [id],
     };
-    try {
-      const result = await this._pool.query(query);
-      if (result.rows.length === 0) {
-        throw new NotFoundError("purchase not found");
-      }
-      return result.rows;
-    } catch (error) {
-      throw new InvariantError(error.message);
+    const result = await this._executeQuery(query);
+    if (result.rows.length === 0) {
+      throw new NotFoundError("Purchase details not found");
     }
+    return result.rows;
   }
 
   async getPurchaseDetailsById(id) {
     const query = {
-      text: `
-        select * from purchase_details pd where pd.id = $1
-      `,
+      text: `SELECT * FROM purchase_details pd WHERE pd.id = $1`,
       values: [id],
     };
-    try {
-      const result = await this._pool.query(query);
-      if (result.rows.length === 0) {
-        throw new NotFoundError("purchase not found");
-      }
-      return result.rows[0];
-    } catch (error) {
-      throw new InvariantError(error.message);
+    const result = await this._executeQuery(query);
+    if (result.rows.length === 0) {
+      throw new NotFoundError("Purchase details not found");
     }
+    return result.rows[0];
   }
 
   async addPurchase({ supplier_id, purchase_date, products }) {
-    //products = [{product_id, quantity,cost,expiry_date}]
+    await this._pool.query("BEGIN");
     try {
-      await this._pool.query("BEGIN");
       await this._supplierService.getSupplierByID(supplier_id);
 
-      const total_cost = products?.reduce((acc, product) => {
-        return acc + product.quantity * product.cost;
-      }, 0);
+      const total_cost = products.reduce(
+        (acc, product) => acc + product.quantity * product.cost,
+        0
+      );
       const query = {
-        text: `
-        INSERT INTO purchase (supplier_id, purchase_date, total_cost, status_id) 
-        VALUES ($1, $2, $3, $4) RETURNING id
-      `,
+        text: `INSERT INTO purchase (supplier_id, purchase_date, total_cost, status_id) VALUES ($1, $2, $3, $4) RETURNING id`,
         values: [supplier_id, purchase_date, total_cost, 1],
       };
-      const result = await this._pool.query(query);
-
+      const result = await this._executeQuery(query);
       const purchaseId = result.rows[0].id;
+
       for (const product of products) {
         const { product_id, quantity, cost, expiry_date } = product;
         await this._productService.getProductByID(product_id);
         await this._stockService.checkMaximumStock(product_id, quantity);
         const query = {
-          text: `
-          INSERT INTO purchase_details (purchase_id, product_id, quantity, cost, expiry_date, remaining_stock)
-          VALUES ($1, $2, $3, $4, $5, $3)
-        `,
+          text: `INSERT INTO purchase_details (purchase_id, product_id, quantity, cost, expiry_date, remaining_stock) VALUES ($1, $2, $3, $4, $5, $3)`,
           values: [purchaseId, product_id, quantity, cost, expiry_date],
         };
-        await this._pool.query(query);
+        await this._executeQuery(query);
       }
+
       await this._pool.query("COMMIT");
       return result.rows[0];
     } catch (error) {
@@ -178,95 +150,145 @@ class PurchaseService {
     }
   }
 
-  async editPurchase({ id, supplier_id, purchase_date, total_cost }) {
+  async editPurchase({ id, supplier_id, purchase_date, products }) {
+    await this._pool.query("BEGIN");
     try {
       const updated_at = new Date();
       const checkPurchase = {
         text: `SELECT * FROM purchase WHERE id = $1`,
         values: [id],
       };
-      if (checkPurchase.rows.length === 0) {
-        throw new NotFoundError("Purchase tidak ditemukan");
+      const purchaseResult = await this._executeQuery(checkPurchase);
+      if (purchaseResult.rows.length === 0) {
+        throw new NotFoundError("Purchase not found");
       }
 
-      if (checkPurchase.rows[0].status === 2) {
-        throw new InvariantError(
-          "Tidak bisa mengubah data purchase yang sudah complete"
-        );
+      if (purchaseResult.rows[0].status_id === 2) {
+        throw new InvariantError("Cannot edit a completed purchase");
       }
 
       await this._supplierService.getSupplierByID(supplier_id);
 
-      const query = {
-        text: `
-      UPDATE purchase SET supplier_id = $1, purchase_date = $2, total_cost = $3, updated_at = $4
-      WHERE id = $6 RETURNING id
-    `,
+      const total_cost = products.reduce(
+        (acc, product) => acc + product.quantity * product.cost,
+        0
+      );
+      const updatePurchaseQuery = {
+        text: `UPDATE purchase SET supplier_id = $1, purchase_date = $2, total_cost = $3, updated_at = $4 WHERE id = $5 RETURNING id`,
         values: [supplier_id, purchase_date, total_cost, updated_at, id],
       };
-      const result = await this._pool.query(query);
-      if (result.rows.length === 0) {
-        throw new NotFoundError("Purchase tidak ditemukan");
-      }
-      return result.rows[0];
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
-  }
+      const result = await this._executeQuery(updatePurchaseQuery);
 
-  async editPurchaseDetails({
-    id,
-    purchase_id,
-    product_id,
-    quantity,
-    cost,
-    expiry_date,
-  }) {
-    try {
-      const purchase = await this.getPurchaseById(purchase_id);
-      if (purchase.status_id === 2) {
-        throw new InvariantError(
-          "Tidak bisa mengubah data purchase yang sudah complete"
-        );
-      }
-      await this.getPurchaseDetailsById(id);
-      await this._productService.getProductByID(product_id);
-      await this._stockService.checkMaximumStock(product_id, quantity);
-      const query = {
-        text: `
-        UPDATE purchase_details SET purchase_id = $1, product_id = $2, quantity = $3, cost = $4, expiry_date = $5
-        WHERE id = $6 RETURNING id
-      `,
-        values: [purchase_id, product_id, quantity, cost, expiry_date, id],
+      const deletePurchaseDetailsQuery = {
+        text: `DELETE FROM purchase_details WHERE purchase_id = $1`,
+        values: [id],
       };
-      const result = await this._pool.query(query);
+      await this._executeQuery(deletePurchaseDetailsQuery);
+
+      for (const product of products) {
+        const { product_id, quantity, cost, expiry_date } = product;
+        await this._productService.getProductByID(product_id);
+        await this._stockService.checkMaximumStock(product_id, quantity);
+        const insertPurchaseDetailsQuery = {
+          text: `INSERT INTO purchase_details (purchase_id, product_id, quantity, cost, expiry_date, remaining_stock) VALUES ($1, $2, $3, $4, $5, $3)`,
+          values: [id, product_id, quantity, cost, expiry_date],
+        };
+        await this._executeQuery(insertPurchaseDetailsQuery);
+      }
+
+      await this._pool.query("COMMIT");
       return result.rows[0];
     } catch (error) {
+      await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);
     }
   }
 
   async completePurchase(id) {
+    await this._pool.query("BEGIN");
     try {
       const updated_at = new Date();
       const received_date = new Date();
       const purchase = await this.getPurchaseById(id);
-      if (purchase.status === 2) {
-        throw new InvariantError("Purchase sudah complete");
+      const purchaseDetails = await this.getPurchaseDetailsByPurchaseId(id);
+      if (purchase.status_id === 2) {
+        throw new InvariantError("Purchase is already completed");
       }
       const query = {
-        text: `
-        UPDATE purchase SET status_id = 2, received_date = $1, updated_at = $2
-        WHERE id = $3 RETURNING id
-      `,
+        text: `UPDATE purchase SET status_id = 2, received_date = $1, updated_at = $2 WHERE id = $3 RETURNING id`,
         values: [received_date, updated_at, id],
       };
-      const result = await this._pool.query(query);
+      const result = await this._executeQuery(query);
+
+      for (const detail of purchaseDetails) {
+        await this._insertReport({
+          product_id: detail.product_id,
+          total_purchase: detail.quantity,
+          total_expense: detail.cost * detail.quantity,
+          purchase_date: purchase.purchase_date,
+        });
+      }
+
+      await this._pool.query("COMMIT");
       return result.rows[0];
     } catch (error) {
-      console.log(error);
+      await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);
     }
+  }
+
+  async _checkReport(purchase_date, product_name) {
+    const query = {
+      text: `SELECT id FROM purchase_report WHERE product_name = $1 AND report_date = $2`,
+      values: [product_name, purchase_date],
+    };
+    const result = await this._executeQuery(query);
+    return result.rows[0];
+  }
+
+  async _insertReport({
+    product_id,
+    total_purchase,
+    total_expense,
+    purchase_date,
+  }) {
+    const product = await this._productService.getProductByID(product_id);
+    const checkReport = await this._checkReport(
+      purchase_date,
+      product[0].product_name
+    );
+    if (checkReport) {
+      await this._updateReport({
+        product_name: product[0].product_name,
+        total_purchase,
+        total_expense,
+        purchase_date,
+      });
+      return;
+    }
+    const query = {
+      text: `INSERT INTO purchase_report (product_name, total_purchase, total_expense, report_date) VALUES ($1, $2, $3, $4)`,
+      values: [
+        product[0].product_name,
+        total_purchase,
+        total_expense,
+        purchase_date,
+      ],
+    };
+    await this._executeQuery(query);
+  }
+
+  async _updateReport({
+    product_name,
+    total_purchase,
+    total_expense,
+    purchase_date,
+  }) {
+    const query = {
+      text: `UPDATE purchase_report SET total_purchase = total_purchase + $2, total_expense = total_expense + $3 WHERE product_name = $1 AND report_date = $4`,
+      values: [product_name, total_purchase, total_expense, purchase_date],
+    };
+    await this._executeQuery(query);
   }
 }
 

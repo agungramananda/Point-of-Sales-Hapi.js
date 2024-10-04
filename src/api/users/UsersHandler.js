@@ -11,7 +11,7 @@ class UsersHandler {
   async getUsersHandler(request, h) {
     this._validator.validateUsersQuery(request.query);
     const { name, role, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getUsers({
+    const { data, page_info } = await this._service.getUsers({
       name,
       role,
       page,
@@ -22,7 +22,7 @@ class UsersHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -59,21 +59,29 @@ class UsersHandler {
     return h
       .response({
         status: "success",
-        message: "User berhasil ditambahkan",
-        data: {
-          newUser,
-        },
+        message: "User successfully added",
       })
       .code(201);
   }
 
+  //belum melakukan pengecekan apakah user yang diedit adalah user yang sedang login
   async putUserByIDHandler(request, h) {
     this._validator.validateUsersParams(request.params);
     this._validator.validateUsersPayload(request.payload);
 
+    const user_id = request.auth.credentials.id;
     const { id } = request.params;
     const { username, password, name, role_id, status } = request.payload;
 
+    if (user_id == id) {
+      return h
+        .response({
+          status: "fail",
+          message:
+            "Editing your own account is not allowed and may cause errors",
+        })
+        .code(403);
+    }
     const editedUser = await this._service.editUser({
       id,
       username,
@@ -86,28 +94,32 @@ class UsersHandler {
     return h
       .response({
         status: "success",
-        message: "User berhasil diubah",
-        data: {
-          editedUser,
-        },
+        message: "User successfully updated",
       })
       .code(200);
   }
 
+  //belum melakukan pengecekan apakah user yang diedit adalah user yang sedang login
   async deleteUserByIDHandler(request, h) {
     this._validator.validateUsersParams(request.params);
 
     const { id } = request.params;
+    const user_id = request.auth.credentials.id;
+    if (user_id == id) {
+      return h
+        .response({
+          status: "fail",
+          message: "You cannot delete your own account",
+        })
+        .code(403);
+    }
 
     const deletedUser = await this._service.deleteUser(id);
 
     return h
       .response({
         status: "success",
-        message: "Product berhasil dihapus",
-        data: {
-          deletedUser,
-        },
+        message: "User successfully deleted",
       })
       .code(200);
   }

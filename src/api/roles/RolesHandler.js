@@ -10,7 +10,7 @@ class RolesHandler {
   async getRolesHandler(request, h) {
     this._validator.validateRoleQuery(request.query);
     const { role, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getRoles({
+    const { data, page_info } = await this._service.getRoles({
       role,
       page,
       limit,
@@ -19,7 +19,7 @@ class RolesHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -31,9 +31,7 @@ class RolesHandler {
     return h
       .response({
         status: "success",
-        data: {
-          roles,
-        },
+        data: roles,
       })
       .code(200);
   }
@@ -45,13 +43,13 @@ class RolesHandler {
     return h
       .response({
         status: "success",
-        data: {
-          roleId,
-        },
+        message: "Role successfully added",
       })
       .code(201);
   }
 
+  // Belum melakukan pengecekan agar ketika permissions diubah maka akan langsung diubah pada user yang memiliki role tersebut dan dapat terjadi kesalahan pada saat terdapat user sudah login
+  /*
   async putRoleHandler(request, h) {
     this._validator.validateRoleParams(request.params);
     this._validator.validateRolePayload(request.payload);
@@ -61,22 +59,22 @@ class RolesHandler {
     return h
       .response({
         status: "success",
-        message: "Role berhasil diperbarui",
+        message: "Role successfully updated",
       })
       .code(200);
   }
 
   async deleteRoleHandler(request, h) {
     this._validator.validateRoleParams(request.params);
-    const { id } = request.params;
     await this._service.deleteRole(id);
     return h
       .response({
         status: "success",
-        message: "Role berhasil dihapus",
+        message: "Role successfully deleted",
       })
       .code(200);
   }
+      */
 
   async getPermissionsHandler(_, h) {
     const permissions = await this._service.getPermissions();

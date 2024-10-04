@@ -48,6 +48,9 @@ exports.up = (pgm) => {
     },
     deleted_at: { type: "timestamp" },
   });
+
+  pgm.createIndex("customer", "email");
+  pgm.createIndex("customer", "name");
 };
 
 /**
@@ -56,5 +59,7 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("customer", "name");
+  pgm.dropIndex("customer", "email");
   pgm.dropTable("customer");
 };

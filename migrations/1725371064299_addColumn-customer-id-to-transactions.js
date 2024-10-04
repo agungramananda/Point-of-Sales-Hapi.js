@@ -16,6 +16,8 @@ exports.up = (pgm) => {
       references: "customer",
     },
   });
+
+  pgm.createIndex("transactions", "customer_id");
 };
 
 /**
@@ -24,5 +26,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("transactions", "customer_id");
   pgm.dropColumns("transactions", ["customer_id"]);
 };

@@ -16,6 +16,8 @@ exports.up = (pgm) => {
       notNull: true,
     },
   });
+
+  pgm.createIndex("tokens", "refresh_token");
 };
 
 /**
@@ -24,5 +26,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("tokens", "refresh_token");
   pgm.dropTable("tokens");
 };

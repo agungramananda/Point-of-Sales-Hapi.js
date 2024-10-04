@@ -6,10 +6,17 @@ const PurchaseParamsSchema = Joi.object({
 
 const PurchasePayloadSchema = Joi.object({
   supplier_id: Joi.number().integer().required(),
-  product_id: Joi.number().integer().required(),
-  quantity: Joi.number().integer().required(),
-  price: Joi.number().required(),
-  expiry_date: Joi.date().allow(null),
+  purchase_date: Joi.date().iso().required(),
+  products: Joi.array()
+    .items(
+      Joi.object({
+        product_id: Joi.number().integer().required(),
+        quantity: Joi.number().integer().required(),
+        cost: Joi.number().integer().required(),
+        expiry_date: Joi.string().required(),
+      })
+    )
+    .required(),
 });
 
 const PurchaseQuerySchema = Joi.object({

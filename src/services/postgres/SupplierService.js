@@ -11,7 +11,9 @@ class SupplierService {
 
   async getAllSuppliers({ name, page, limit }) {
     let query = `
-      SELECT s.id,s.supplier_name,s.contact,s.address FROM suppliers s WHERE s.deleted_at IS NULL
+      SELECT s.id, s.supplier_name, s.contact, s.address 
+      FROM suppliers s 
+      WHERE s.deleted_at IS NULL
     `;
     query = searchName(
       { keyword: name },
@@ -24,10 +26,10 @@ class SupplierService {
       text: `${query} LIMIT $1 OFFSET $2`,
       values: [p.limit, p.offset],
     };
-    const infoPage = await getMaxPage(p, query);
+    const page_info = await getMaxPage(p, query);
     try {
       const result = await this._pool.query(sql);
-      return { data: result.rows, infoPage };
+      return { data: result.rows, page_info };
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -35,15 +37,15 @@ class SupplierService {
 
   async getSupplierByID(id) {
     const query = {
-      text: "SELECT id,supplier_name,contact,address FROM suppliers WHERE id = $1 AND deleted_at IS NULL",
+      text: "SELECT id, supplier_name, contact, address FROM suppliers WHERE id = $1 AND deleted_at IS NULL",
       values: [id],
     };
 
     try {
       const result = await this._pool.query(query);
 
-      if (result.rows.length == 0) {
-        throw new NotFoundError("Supplier tidak ada");
+      if (result.rows.length === 0) {
+        throw new NotFoundError("Supplier not found");
       }
       return result.rows;
     } catch (error) {
@@ -52,29 +54,17 @@ class SupplierService {
   }
 
   async addSupplier({ supplier_name, contact, address }) {
-    const checkQuery = {
-      text: "SELECT id FROM suppliers WHERE supplier_name = $1 AND deleted_at IS NULL",
-      values: [supplier_name],
-    };
-
-    try {
-      const isDuplicate = await this._pool.query(checkQuery);
-      if (isDuplicate.rows[0]) {
-        throw new InvariantError("Nama supplier sudah digunakan");
-      }
-    } catch (error) {
-      throw new Error(error.message);
-    }
+    await this._validateSupplierName(supplier_name);
 
     const query = {
-      text: "INSERT INTO suppliers (supplier_name,contact,address) VALUES ($1,$2,$3) RETURNING id,supplier_name,contact,address",
+      text: "INSERT INTO suppliers (supplier_name, contact, address) VALUES ($1, $2, $3) RETURNING id, supplier_name, contact, address",
       values: [supplier_name, contact, address],
     };
 
     try {
       const result = await this._pool.query(query);
       if (!result.rows[0]) {
-        throw new InvariantError("Supplier gagal ditambahkan");
+        throw new InvariantError("Failed to add supplier");
       }
       return result.rows;
     } catch (error) {
@@ -83,30 +73,18 @@ class SupplierService {
   }
 
   async editSupplierByID({ id, supplier_name, contact, address }) {
+    await this._validateSupplierName(supplier_name, id);
+
     const updatedAt = new Date();
-    const checkQuery = {
-      text: "SELECT id FROM suppliers WHERE supplier_name = $1 AND id != $2 AND deleted_at IS NULL",
-      values: [supplier_name, id],
-    };
-
-    try {
-      const isDuplicate = await this._pool.query(checkQuery);
-      if (isDuplicate.rows[0]) {
-        throw new InvariantError("Nama supplier sudah digunakan");
-      }
-    } catch (error) {
-      throw new Error(error.message);
-    }
-
     const query = {
-      text: "UPDATE suppliers SET supplier_name = $1, contact = $2, address = $3, updated_at = $4 WHERE id = $5 RETURNING id,supplier_name,contact,address,updated_at",
+      text: "UPDATE suppliers SET supplier_name = $1, contact = $2, address = $3, updated_at = $4 WHERE id = $5 RETURNING id, supplier_name, contact, address, updated_at",
       values: [supplier_name, contact, address, updatedAt, id],
     };
 
     try {
       const result = await this._pool.query(query);
       if (!result.rows[0]) {
-        throw new InvariantError("Gagal mengubah data supplier");
+        throw new NotFoundError("Supplier not found");
       }
       return result.rows;
     } catch (error) {
@@ -115,19 +93,37 @@ class SupplierService {
   }
 
   async deleteSupplierByID(id) {
-    const deleted_at = new Date();
+    const deletedAt = new Date();
     const query = {
       text: "UPDATE suppliers SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL RETURNING id",
-      values: [deleted_at, id],
+      values: [deletedAt, id],
     };
 
     try {
       const result = await this._pool.query(query);
 
-      if (result.rows.length == 0) {
-        throw new InvariantError("Gagal menghapus supplier");
+      if (result.rows.length === 0) {
+        throw new NotFoundError("Supplier not found");
       }
       return result.rows;
+    } catch (error) {
+      throw new InvariantError(error.message);
+    }
+  }
+
+  async _validateSupplierName(supplier_name, id = null) {
+    const checkQuery = {
+      text: `SELECT id FROM suppliers WHERE supplier_name = $1 AND deleted_at IS NULL ${
+        id ? "AND id != $2" : ""
+      }`,
+      values: id ? [supplier_name, id] : [supplier_name],
+    };
+
+    try {
+      const isDuplicate = await this._pool.query(checkQuery);
+      if (isDuplicate.rows.length > 0) {
+        throw new InvariantError("Supplier name already in use");
+      }
     } catch (error) {
       throw new InvariantError(error.message);
     }

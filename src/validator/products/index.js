@@ -3,11 +3,20 @@ const {
   ProductsPayloadSchema,
   ProductsParamsSchema,
   ProductSortQuerySchema,
+  ProductsAddSchema,
+  ProductsUpdateSchema,
 } = require("./schema");
 
 const ProductsValidator = {
-  validateProductsPayload: (payload) => {
-    const validationResult = ProductsPayloadSchema.validate(payload);
+  validateAddProduct: (payload) => {
+    const validationResult = ProductsAddSchema.validate(payload);
+
+    if (validationResult.error) {
+      throw new InvariantError(validationResult.error.message);
+    }
+  },
+  validateUpdateProduct: (payload) => {
+    const validationResult = ProductsUpdateSchema.validate(payload);
 
     if (validationResult.error) {
       throw new InvariantError(validationResult.error.message);

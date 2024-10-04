@@ -13,24 +13,21 @@ class VoucherService {
 
   async getVouchers({ code, page, limit }) {
     let query = `
-      select v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name as discount_type, v.min_transaction, v.max_discount, v.start_date, v.end_date, v.validity_period
-      from vouchers v
-      left join discount_type dt on v.discount_type_id = dt.id
-      where v.deleted_at is null
+      SELECT v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name AS discount_type, v.min_transaction, v.max_discount, v.start_date, v.end_date, v.validity_period
+      FROM vouchers v
+      LEFT JOIN discount_type dt ON v.discount_type_id = dt.id
+      WHERE v.deleted_at IS NULL
     `;
 
     query = searchName({ keyword: code }, "voucher v", "v.code", query);
 
     const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, query);
+    const page_info = await getMaxPage(p, query);
     query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
     try {
-      const rules = await this._membershipService.getPointsRules();
-      if (rules.points_usage != "Redeem Voucher") {
-        throw new InvariantError("Membership tidak mendukung penukaran poin");
-      }
+      await this._validatePointsUsage();
       const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
+      return { data: result.rows, page_info };
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -39,18 +36,17 @@ class VoucherService {
   async getVoucherByCode(code) {
     const query = {
       text: `
-        select v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name as discount_type, v.min_transaction, v.max_discount
-        from vouchers v
-        left join discount_type dt on v.discount_type_id = dt.id
-        where v.code = $1 and v.deleted_at is null
+        SELECT v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name AS discount_type, v.min_transaction, v.max_discount
+        FROM vouchers v
+        LEFT JOIN discount_type dt ON v.discount_type_id = dt.id
+        WHERE v.code = $1 AND v.deleted_at IS NULL
       `,
       values: [code],
     };
     try {
       const result = await this._pool.query(query);
-
       if (result.rows.length === 0) {
-        throw new NotFoundError("Voucher tidak ditemukan");
+        throw new NotFoundError("Voucher not found");
       }
       return result.rows[0];
     } catch (error) {
@@ -61,21 +57,18 @@ class VoucherService {
   async getVoucherById(id) {
     const query = {
       text: `
-        select v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name as discount_type, v.min_transaction, v.max_discount, v.start_date, v.end_date, v.validity_period
-        from vouchers v
-        left join discount_type dt on v.discount_type_id = dt.id
-        where v.id = $1 and v.deleted_at is null
+        SELECT v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name AS discount_type, v.min_transaction, v.max_discount, v.start_date, v.end_date, v.validity_period
+        FROM vouchers v
+        LEFT JOIN discount_type dt ON v.discount_type_id = dt.id
+        WHERE v.id = $1 AND v.deleted_at IS NULL
       `,
       values: [id],
     };
     try {
-      const rules = await this._membershipService.getPointsRules();
-      if (rules.points_usage != "Redeem Voucher") {
-        throw new InvariantError("Membership tidak mendukung penukaran poin");
-      }
+      await this._validatePointsUsage();
       const result = await this._pool.query(query);
       if (result.rows.length === 0) {
-        throw new NotFoundError("Voucher tidak ditemukan");
+        throw new NotFoundError("Voucher not found");
       }
       return result.rows[0];
     } catch (error) {
@@ -96,12 +89,15 @@ class VoucherService {
     validity_period,
   }) {
     try {
-      const rules = await this._membershipService.getPointsRules();
-      if (rules.points_usage != "Redeem Voucher") {
-        throw new InvariantError("Membership tidak mendukung penukaran poin");
-      }
+      await this._validatePointsUsage();
+      await this._validateVoucherCode(code);
+
       const query = {
-        text: `INSERT INTO vouchers (code, membership_id, point_cost, discount_type_id, discount_value, min_transaction, max_discount, start_date, end_date, validity_period) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+        text: `
+          INSERT INTO vouchers (code, membership_id, point_cost, discount_type_id, discount_value, min_transaction, max_discount, start_date, end_date, validity_period)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          RETURNING id
+        `,
         values: [
           code,
           membership_id,
@@ -115,13 +111,6 @@ class VoucherService {
           validity_period,
         ],
       };
-      const checkVoucher = await this._pool.query(
-        `SELECT id FROM vouchers WHERE code = $1 and deleted_at is null`,
-        [code]
-      );
-      if (checkVoucher.rows.length > 0) {
-        throw new InvariantError("Kode voucher sudah digunakan");
-      }
       const result = await this._pool.query(query);
       return result.rows[0].id;
     } catch (error) {
@@ -143,10 +132,10 @@ class VoucherService {
     validity_period,
   }) {
     try {
-      const rules = await this._membershipService.getPointsRules();
-      if (rules.points_usage != "Redeem Voucher") {
-        throw new InvariantError("Membership tidak mendukung penukaran poin");
-      }
+      await this._validatePointsUsage();
+      await this.getVoucherById(id);
+      await this._validateVoucherCode(code, id);
+
       const query = {
         text: `
           UPDATE vouchers
@@ -167,14 +156,6 @@ class VoucherService {
           id,
         ],
       };
-      await this.getVoucherById(id);
-      const checkDuplicate = await this._pool.query(
-        `SELECT id FROM vouchers WHERE code = $1 and id != $2 and deleted_at is null`,
-        [code, id]
-      );
-      if (checkDuplicate.rows.length > 0) {
-        throw new InvariantError("Kode voucher sudah digunakan");
-      }
       await this._pool.query(query);
     } catch (error) {
       throw new InvariantError(error.message);
@@ -183,17 +164,19 @@ class VoucherService {
 
   async deleteVoucher(id) {
     try {
-      const rules = await this._membershipService.getPointsRules();
-      if (rules.points_usage != "Redeem Voucher") {
-        throw new InvariantError("Membership tidak mendukung penukaran poin");
-      }
+      await this._validatePointsUsage();
       const query = {
-        text: `UPDATE voucher SET deleted_at = current_timestamp WHERE id = $1 and deleted_at is null RETURNING id`,
+        text: `
+          UPDATE vouchers
+          SET deleted_at = current_timestamp
+          WHERE id = $1 AND deleted_at IS NULL
+          RETURNING id
+        `,
         values: [id],
       };
       const result = await this._pool.query(query);
       if (result.rows.length === 0) {
-        throw new NotFoundError("Voucher tidak ditemukan");
+        throw new NotFoundError("Voucher not found");
       }
     } catch (error) {
       throw new InvariantError(error.message);
@@ -201,16 +184,12 @@ class VoucherService {
   }
 
   async redeemPoinToVoucher({ voucher_id, customer_id }) {
-    console.log(voucher_id, customer_id);
-    const rules = await this._membershipService.getPointsRules();
-    if (rules.points_usage != "Redeem Voucher") {
-      throw new InvariantError("Membership tidak mendukung penukaran poin");
-    }
     try {
+      await this._validatePointsUsage();
       const customer = await this._customerService.getCustomerById(customer_id);
       const voucher = await this.getVoucherById(voucher_id);
       if (customer.points < voucher.point_cost) {
-        throw new InvariantError("Poin tidak mencukupi");
+        throw new InvariantError("Insufficient points");
       }
       const now = new Date();
       const expired_date = new Date(
@@ -231,21 +210,18 @@ class VoucherService {
   }
 
   async getCustomerVouchers(customer_id) {
-    const rules = await this._membershipService.getPointsRules();
-    if (rules.points_usage != "Redeem Voucher") {
-      throw new InvariantError("Membership tidak mendukung penukaran poin");
-    }
-    const query = {
-      text: `
-               select v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name as discount_type, v.min_transaction, v.max_discount, cv.expiry_date 
-        from vouchers v 
-        left join discount_type dt on v.discount_type_id = dt.id
-        join customer_vouchers cv on v.id = cv.voucher_id
-        where cv.customer_id = $1 and cv.deleted_at is null and (expiry_date > current_timestamp) and is_used = false
-      `,
-      values: [customer_id],
-    };
     try {
+      await this._validatePointsUsage();
+      const query = {
+        text: `
+          SELECT v.id, v.code, v.membership_id, v.point_cost, v.discount_value, dt.type_name AS discount_type, v.min_transaction, v.max_discount, cv.expiry_date 
+          FROM vouchers v 
+          LEFT JOIN discount_type dt ON v.discount_type_id = dt.id
+          JOIN customer_vouchers cv ON v.id = cv.voucher_id
+          WHERE cv.customer_id = $1 AND cv.deleted_at IS NULL AND (expiry_date > current_timestamp) AND is_used = false
+        `,
+        values: [customer_id],
+      };
       const result = await this._pool.query(query);
       return result.rows[0];
     } catch (error) {
@@ -256,14 +232,14 @@ class VoucherService {
   async checkCustomerVoucher({ customer_id, voucher_id }) {
     const query = {
       text: `
-        select * from customer_vouchers where voucher_id = $1 and customer_id = $2 and is_used = false and deleted_at is null
+        SELECT * FROM customer_vouchers WHERE voucher_id = $1 AND customer_id = $2 AND is_used = false AND deleted_at IS NULL
       `,
       values: [voucher_id, customer_id],
     };
     try {
       const result = await this._pool.query(query);
       if (result.rows.length === 0) {
-        throw new NotFoundError("Voucher tidak ditemukan");
+        throw new NotFoundError("Voucher not found");
       }
       return result.rows[0];
     } catch (error) {
@@ -272,23 +248,40 @@ class VoucherService {
   }
 
   async useVoucher({ voucher_id, customer_id }) {
-    const rules = await this._membershipService.getPointsRules();
-    if (rules.points_usage != "Redeem Voucher") {
-      throw new InvariantError("Membership tidak mendukung penukaran poin");
-    }
     try {
+      await this._validatePointsUsage();
       await this.getVoucherById(voucher_id);
       const query = {
         text: `
           UPDATE customer_vouchers
           SET is_used = true
-          WHERE voucher_id = $1 and customer_id = $2
+          WHERE voucher_id = $1 AND customer_id = $2
         `,
         values: [voucher_id, customer_id],
       };
       await this._pool.query(query);
     } catch (error) {
       throw new InvariantError(error.message);
+    }
+  }
+
+  async _validatePointsUsage() {
+    const rules = await this._membershipService.getPointsRules();
+    if (rules.points_usage !== "Redeem Voucher") {
+      throw new InvariantError("Membership does not support point redemption");
+    }
+  }
+
+  async _validateVoucherCode(code, id = null) {
+    const checkQuery = {
+      text: `SELECT id FROM vouchers WHERE code = $1 AND deleted_at IS NULL ${
+        id ? "AND id != $2" : ""
+      }`,
+      values: id ? [code, id] : [code],
+    };
+    const checkVoucher = await this._pool.query(checkQuery);
+    if (checkVoucher.rows.length > 0) {
+      throw new InvariantError("Voucher code already in use");
     }
   }
 }

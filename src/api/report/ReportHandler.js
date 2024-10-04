@@ -12,7 +12,7 @@ class ReportHandler {
     this._validator.validateSalesReportQuery(request.query);
     let { startDate, endDate, page, limit } = request.query;
 
-    const { data, infoPage } = await this._service.getSalesReport({
+    const { data, page_info } = await this._service.getSalesReport({
       startDate,
       endDate,
       page,
@@ -23,7 +23,7 @@ class ReportHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -31,7 +31,7 @@ class ReportHandler {
   async getPurchaseReportHandler(request, h) {
     this._validator.validatePurchaseReportQuery(request.query);
     const { startDate, endDate, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getPurchaseReport({
+    const { data, page_info } = await this._service.getPurchaseReport({
       startDate,
       endDate,
       page,
@@ -42,63 +42,29 @@ class ReportHandler {
       .response({
         status: "success",
         data,
-        infoPage,
-      })
-      .code(200);
-  }
-
-  async getProductSalesReportHandler(request, h) {
-    this._validator.validateProductReportQuery(request.query);
-    const { date, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getProductSalesReport({
-      date,
-      page,
-      limit,
-    });
-
-    return h
-      .response({
-        status: "success",
-        data,
-        infoPage,
-      })
-      .code(200);
-  }
-
-  async getProductPurchaseReportHandler(request, h) {
-    this._validator.validateProductReportQuery(request.query);
-    const { date, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getProductPurchaseReport({
-      date,
-      page,
-      limit,
-    });
-
-    return h
-      .response({
-        status: "success",
-        data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
 
   async getStockReportHandler(request, h) {
     this._validator.validateStockReportQuery(request.query);
-    const { page, limit, date, productName, type } = request.query;
-    const { data, infoPage } = await this._service.getStockReport({
+    const { page, limit, startDate, endDate, productName, type } =
+      request.query;
+    const { data, page_info } = await this._service.getStockReport({
       productName,
       type,
       page,
       limit,
-      date,
+      startDate,
+      endDate,
     });
 
     return h
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }

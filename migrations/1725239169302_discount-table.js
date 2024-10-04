@@ -27,7 +27,7 @@ exports.up = (pgm) => {
 
   pgm.sql(`
     insert into discount_type (type_name) values ('Percentage'), ('Fixed');
-    `);
+  `);
 
   pgm.createTable("discount", {
     id: "id",
@@ -52,6 +52,9 @@ exports.up = (pgm) => {
     },
     deleted_at: { type: "timestamp" },
   });
+
+  pgm.createIndex("discount", "discount_code");
+  pgm.createIndex("discount", "discount_type_id");
 };
 
 /**
@@ -60,6 +63,8 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("discount", "discount_type_id");
+  pgm.dropIndex("discount", "discount_code");
   pgm.dropTable("discount");
   pgm.dropTable("discount_type");
 };

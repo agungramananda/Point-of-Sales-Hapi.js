@@ -11,7 +11,7 @@ class TransactionsHandler {
   async getTransactionsHandler(request, h) {
     this._validator.validateTransactionsQuery(request.query);
     const { startDate, endDate, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getTransactions({
+    const { data, page_info } = await this._service.getTransactions({
       startDate,
       endDate,
       page,
@@ -22,7 +22,7 @@ class TransactionsHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -50,7 +50,7 @@ class TransactionsHandler {
 
     const user_id = request.auth.credentials.id;
 
-    const newTransaction = await this._service.addTransaction({
+    const invoice = await this._service.addTransaction({
       user_id,
       customer_id,
       items,
@@ -62,9 +62,9 @@ class TransactionsHandler {
     return h
       .response({
         status: "success",
-        message: "Transaksi berhasil ditambahkan",
+        message: "Transaction successfully added",
         data: {
-          newTransaction,
+          invoice,
         },
       })
       .code(201);

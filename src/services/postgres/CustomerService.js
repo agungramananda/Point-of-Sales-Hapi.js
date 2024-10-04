@@ -4,7 +4,7 @@ const NotFoundError = require("../../exceptions/NotFoundError");
 const { pagination, getMaxPage } = require("../../utils/pagination");
 const { searchName } = require("../../utils/searchName");
 
-class CustmoerService {
+class CustomerService {
   constructor() {
     this._pool = new Pool();
   }
@@ -12,12 +12,12 @@ class CustmoerService {
   async getCustomers({ name, page, limit }) {
     try {
       let query = `
-      select 
-      c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.points, c.created_at as join_date
-      from customer c
-      left join membership m on c.membership_id = m.id
-      where c.deleted_at is null
-    `;
+        SELECT 
+          c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.points, c.created_at AS join_date
+        FROM customer c
+        LEFT JOIN membership m ON c.membership_id = m.id
+        WHERE c.deleted_at IS NULL
+      `;
       query = await searchName(
         { keyword: name },
         "customer c",
@@ -25,10 +25,10 @@ class CustmoerService {
         query
       );
       const p = pagination({ limit, page });
-      const infoPage = await getMaxPage(p, query);
+      const page_info = await getMaxPage(p, query);
       query += ` ORDER BY c.created_at DESC LIMIT ${p.limit} OFFSET ${p.offset}`;
       const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
+      return { data: result.rows, page_info };
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -38,16 +38,17 @@ class CustmoerService {
     try {
       const query = {
         text: `
-      select 
-      c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.points, c.created_at as join_date
-      from customer c
-      left join membership m on c.membership_id = m.id
-      where c.deleted_at is null and c.id = $1`,
+          SELECT 
+            c.id, c.name, c.email, c.phone_number, c.address, m.membership_category, c.points, c.created_at AS join_date
+          FROM customer c
+          LEFT JOIN membership m ON c.membership_id = m.id
+          WHERE c.deleted_at IS NULL AND c.id = $1
+        `,
         values: [id],
       };
       const result = await this._pool.query(query);
       if (result.rows.length === 0) {
-        throw new NotFoundError("Customer tidak ditemukan");
+        throw new NotFoundError("Customer not found");
       }
       return result.rows[0];
     } catch (error) {
@@ -61,33 +62,21 @@ class CustmoerService {
   async addCustomer({ name, email, phone_number, address, membership_id }) {
     await this._pool.query("BEGIN");
     try {
-      const checkCustomer = await this._pool.query(
-        `SELECT id FROM customer WHERE email = $1 and deleted_at is null`,
-        [email]
-      );
-      if (checkCustomer.rows.length > 0) {
-        throw new InvariantError(
-          "Gagal menambahkan customer. Email sudah digunakan."
-        );
-      }
-      const membership = await this._pool.query(
-        `SELECT id from membership where id = $1`,
-        [membership_id]
-      );
+      await this._validateCustomerEmail(email);
+      await this._validateMembership(membership_id);
 
-      if (membership.rows.length === 0) {
-        throw new InvariantError("Membership tidak ditemukan");
-      }
       const points = 0;
       const query = {
-        text: `INSERT INTO customer (name,email,phone_number,address,membership_id,points) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, phone_number, address, membership_id, points`,
+        text: `
+          INSERT INTO customer (name, email, phone_number, address, membership_id, points) 
+          VALUES ($1, $2, $3, $4, $5, $6) 
+          RETURNING id, name, email, phone_number, address, membership_id, points
+        `,
         values: [name, email, phone_number, address, membership_id, points],
       };
       const result = await this._pool.query(query);
       await this._pool.query("COMMIT");
-      return {
-        newCustomer: result.rows[0],
-      };
+      return { newCustomer: result.rows[0] };
     } catch (error) {
       await this._pool.query("ROLLBACK");
       throw new InvariantError(error.message);
@@ -96,29 +85,21 @@ class CustmoerService {
 
   async editCustomer(id, { name, email, phone_number, address }) {
     try {
-      const checkCustomer = await this._pool.query(
-        `SELECT id FROM customer WHERE id = $1 and deleted_at is null`,
-        [id]
-      );
-      if (checkCustomer.rows.length === 0) {
-        throw new NotFoundError("Customer tidak ditemukan");
-      }
-      const checkEmail = await this._pool.query(
-        `SELECT id FROM customer WHERE email = $1 and id != $2 and deleted_at is null`,
-        [email, id]
-      );
-      if (checkEmail.rows.length > 0) {
-        throw new InvariantError(
-          "Gagal memperbarui customer. Email sudah digunakan."
-        );
-      }
+      await this._validateCustomerExists(id);
+      await this._validateCustomerEmail(email, id);
+
       const query = {
-        text: `UPDATE customer SET name = $1, email = $2, phone_number = $3, address = $4 WHERE id = $5 and deleted_at is null RETURNING id`,
+        text: `
+          UPDATE customer 
+          SET name = $1, email = $2, phone_number = $3, address = $4 
+          WHERE id = $5 AND deleted_at IS NULL 
+          RETURNING id
+        `,
         values: [name, email, phone_number, address, id],
       };
       const result = await this._pool.query(query);
       if (!result.rows.length) {
-        throw new NotFoundError("Customer tidak ditemukan");
+        throw new NotFoundError("Customer not found");
       }
       return result.rows[0].id;
     } catch (error) {
@@ -131,20 +112,20 @@ class CustmoerService {
 
   async deleteCustomer(id) {
     try {
-      const check = await this._pool.query(
-        "SELECT id FROM customer WHERE id = $1 AND deleted_at is not null",
-        [id]
-      );
-      if (check.rows.length !== 0) {
-        throw new InvariantError("Customer tidak ditemukan");
-      }
+      await this._validateCustomerExists(id);
+
       const query = {
-        text: `UPDATE customer SET deleted_at = current_timestamp WHERE id = $1 and deleted_at is null RETURNING id`,
+        text: `
+          UPDATE customer 
+          SET deleted_at = current_timestamp 
+          WHERE id = $1 AND deleted_at IS NULL 
+          RETURNING id
+        `,
         values: [id],
       };
       const result = await this._pool.query(query);
       if (!result.rows.length) {
-        throw new NotFoundError("Customer tidak ditemukan");
+        throw new NotFoundError("Customer not found");
       }
     } catch (error) {
       if (error instanceof NotFoundError) {
@@ -153,6 +134,53 @@ class CustmoerService {
       throw new InvariantError(error.message);
     }
   }
+
+  async _validateCustomerEmail(email, id = null) {
+    const query = {
+      text: `
+        SELECT id 
+        FROM customer 
+        WHERE email = $1 AND deleted_at IS NULL ${id ? "AND id != $2" : ""}
+      `,
+      values: id ? [email, id] : [email],
+    };
+    const result = await this._pool.query(query);
+    if (result.rows.length > 0) {
+      throw new InvariantError(
+        "Failed to add/edit customer. Email already registered"
+      );
+    }
+  }
+
+  async _validateMembership(membership_id) {
+    const query = {
+      text: `
+        SELECT id 
+        FROM membership 
+        WHERE id = $1
+      `,
+      values: [membership_id],
+    };
+    const result = await this._pool.query(query);
+    if (result.rows.length === 0) {
+      throw new InvariantError("Failed to add customer. Membership not found");
+    }
+  }
+
+  async _validateCustomerExists(id) {
+    const query = {
+      text: `
+        SELECT id 
+        FROM customer 
+        WHERE id = $1 AND deleted_at IS NULL
+      `,
+      values: [id],
+    };
+    const result = await this._pool.query(query);
+    if (result.rows.length === 0) {
+      throw new NotFoundError("Customer not found");
+    }
+  }
 }
 
-module.exports = CustmoerService;
+module.exports = CustomerService;

@@ -39,6 +39,8 @@ exports.up = (pgm) => {
       default: null,
     },
   });
+
+  pgm.createIndex("suppliers", "supplier_name");
 };
 
 /**
@@ -47,5 +49,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("suppliers", "supplier_name");
   pgm.dropTable("suppliers");
 };

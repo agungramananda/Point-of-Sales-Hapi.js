@@ -35,6 +35,8 @@ exports.up = (pgm) => {
       default: pgm.func("current_timestamp"),
     },
   });
+
+  pgm.createIndex("stockmovement", "product_id");
 };
 
 /**
@@ -43,5 +45,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("stockmovement", "product_id");
   pgm.dropTable("stockmovement");
 };

@@ -7,44 +7,15 @@ class StockHandler {
     autoBind(this);
   }
 
-  async getStocksHandler(request, h) {
-    this._validator.validateStockQuery(request.query);
-    const { productName, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getStocks({
-      productName,
-      page,
-      limit,
-    });
-    return h
-      .response({
-        status: "success",
-        data,
-        infoPage,
-      })
-      .code(200);
-  }
-  async getStockByIDHandler(request, h) {
-    this._validator.validateStockParams(request.params);
-    const { id } = request.params;
-    const stock = await this._service.getStockByID(id);
-    return h
-      .response({
-        status: "success",
-        data: {
-          stock,
-        },
-      })
-      .code(200);
-  }
   async putStockSettingsHandler(request, h) {
-    this._validator.validateStockQuery(request.query);
-    this._validator.validaateEditStockSettings(request.payload);
+    this._validator.validateStockParams(request.params);
+    this._validator.validateEditStockSettings(request.payload);
     const { id } = request.params;
-    const { safetyStock, maximumStock } = request.payload;
+    const { safety_stock, maximum_stock } = request.payload;
     await this._service.setStockSettings({
       id,
-      safetyStock,
-      maximumStock,
+      safetyStock: safety_stock,
+      maximumStock: maximum_stock,
     });
     return h
       .response({

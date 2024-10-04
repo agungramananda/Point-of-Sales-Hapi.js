@@ -49,18 +49,6 @@ const routes = (handler) => [
   },
   {
     method: "PUT",
-    path: "/purchase/details/{id}",
-    handler: handler.editPurchaseDetailsHandler,
-    config: {
-      plugins: {
-        rbac: {
-          permissions: ["UPDATE_PURCHASE"],
-        },
-      },
-    },
-  },
-  {
-    method: "PUT",
     path: "/purchase/complete/{id}",
     handler: handler.completePurchaseHandler,
     config: {

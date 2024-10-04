@@ -25,16 +25,18 @@ class CategoriesService {
       const isDuplicate = await this._pool.query(checkQuery);
 
       if (isDuplicate.rows[0]) {
-        throw new InvariantError("Category sudah ada");
+        throw new InvariantError("Category already exists");
       }
 
       const result = await this._pool.query(query);
 
       if (!result.rows[0]) {
-        throw new InvariantError("Category gagal ditambahkan");
+        throw new InvariantError(
+          "Failed to add category, category must be a string"
+        );
       }
 
-      return result.rows[0].category;
+      return;
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -49,12 +51,12 @@ class CategoriesService {
       query
     );
     const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, query);
+    const page_info = await getMaxPage(p, query);
     query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
 
     try {
       const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
+      return { data: result.rows, page_info };
     } catch (error) {
       throw new InvariantError(error.message);
     }
@@ -78,14 +80,14 @@ class CategoriesService {
 
       if (isDuplicate.rows[0]) {
         throw new InvariantError(
-          `Category dengan nama ${category} sudah digunakan`
+          `Category already exists, category must be unique`
         );
       }
 
       const result = await this._pool.query(query);
 
       if (result.rows.length === 0) {
-        throw new NotFoundError("Category tidak ditemukan");
+        throw new NotFoundError("Category not found");
       }
 
       return result.rows;
@@ -106,7 +108,7 @@ class CategoriesService {
       const result = await this._pool.query(query);
 
       if (result.rows.length === 0) {
-        throw new NotFoundError("Category tidak ditemukan");
+        throw new NotFoundError("Category not found");
       }
 
       return result.rows;

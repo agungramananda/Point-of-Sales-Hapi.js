@@ -35,6 +35,8 @@ const routes = (handler) => [
       },
     },
   },
+  // Belum melakukan pengecekan agar ketika permissions diubah maka akan langsung diubah pada user yang memiliki role tersebut dan dapat terjadi kesalahan pada saat terdapat user sudah login
+  /*
   {
     method: "PUT",
     path: "/roles/{id}",
@@ -59,6 +61,7 @@ const routes = (handler) => [
       },
     },
   },
+  */
   {
     method: "GET",
     path: "/roles/permissions",

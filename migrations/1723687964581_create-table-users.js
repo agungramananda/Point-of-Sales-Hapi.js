@@ -50,6 +50,8 @@ exports.up = (pgm) => {
       default: null,
     },
   });
+
+  pgm.createIndex("users", "username");
 };
 
 /**
@@ -58,5 +60,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("users", "username");
   pgm.dropTable("users");
 };

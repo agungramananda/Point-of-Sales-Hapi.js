@@ -11,7 +11,7 @@ class CustomerHandler {
     this._validator.validateAddCustomer(request.payload);
     const { name, email, phone_number, address, membership_id } =
       request.payload;
-    const data = await this._service.addCustomer({
+    await this._service.addCustomer({
       name,
       email,
       phone_number,
@@ -21,8 +21,7 @@ class CustomerHandler {
     return h
       .response({
         status: "success",
-        message: "Customer berhasil ditambahkan",
-        data: [data],
+        message: "Customer successfully added",
       })
       .code(201);
   }
@@ -30,7 +29,7 @@ class CustomerHandler {
   async getCustomersHandler(request, h) {
     this._validator.validateCustomerQuery(request.query);
     const { name, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getCustomers({
+    const { data, page_info } = await this._service.getCustomers({
       name,
       page,
       limit,
@@ -39,7 +38,7 @@ class CustomerHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -70,7 +69,7 @@ class CustomerHandler {
     return h
       .response({
         status: "success",
-        message: "Customer berhasil diperbarui",
+        message: "Customer successfully updated",
       })
       .code(200);
   }
@@ -82,7 +81,7 @@ class CustomerHandler {
     return h
       .response({
         status: "success",
-        message: "Customer berhasil dihapus",
+        message: "Customer successfully deleted",
       })
       .code(200);
   }

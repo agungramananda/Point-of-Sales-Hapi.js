@@ -27,7 +27,6 @@ class IoService {
     this._io.adapter(createAdapter(this._pubClient, subClient));
 
     this._io.on("connection", (socket) => {
-      console.log("Client terhubung:", socket.id);
       socket.join("notifications");
 
       socket.on("error", (err) => {
@@ -41,7 +40,6 @@ class IoService {
 
     subClient.subscribe("notifications", (message) => {
       const notification = JSON.parse(message);
-      console.log("Notifikasi dari server:", notification);
       this._io.to("notifications").emit("notification", notification);
     });
 
@@ -59,10 +57,9 @@ class IoService {
   async sendNotification(notification) {
     try {
       await this._redisService.saveNotification(notification);
-      console.log("Mengirim notif:", notification);
       this._pubClient.publish("notifications", JSON.stringify(notification));
     } catch (err) {
-      console.error("Error mengirim notif:", err);
+      throw new Error(err);
     }
   }
 

@@ -1,6 +1,4 @@
 const { Pool } = require("pg");
-const { searchName } = require("../../utils/searchName");
-const { pagination, getMaxPage } = require("../../utils/pagination");
 const InvariantError = require("../../exceptions/InvariantError");
 const NotFoundError = require("../../exceptions/NotFoundError");
 
@@ -9,42 +7,13 @@ class StockService {
     this._pool = new Pool();
   }
 
-  async getStocks({ productName, page, limit }) {
-    let query = `
-      select s.product_id, p.product_name, s.amount, s.maximum_stock , s.safety_stock , s.reorder_point 
-      from stock s 
-      left join products p on s.product_id = p.id
-      where p.deleted_at is null
-    `;
-
-    if (productName) {
-      query = searchName(
-        { keyword: productName },
-        "products p",
-        "p.product_name",
-        query
-      );
-    }
-
-    const p = pagination({ limit, page });
-    const infoPage = await getMaxPage(p, query);
-    query += ` LIMIT ${p.limit} OFFSET ${p.offset}`;
-
-    try {
-      const result = await this._pool.query(query);
-      return { data: result.rows, infoPage };
-    } catch (error) {
-      throw new InvariantError(error.message);
-    }
-  }
-
   async getStockByProductId(id) {
     const query = {
       text: `
-        SELECT s.product_id, p.product_name, s.amount, s.maximum_stock , s.safety_stock , s.reorder_point 
+        SELECT s.product_id, p.product_name, s.amount, s.maximum_stock, s.safety_stock
         FROM stock s
         LEFT JOIN products p ON s.product_id = p.id
-        WHERE s.product_id = $1 and p.deleted_at is null
+        WHERE s.product_id = $1 AND p.deleted_at IS NULL
       `,
       values: [id],
     };
@@ -52,7 +21,7 @@ class StockService {
     try {
       const result = await this._pool.query(query);
       if (result.rowCount === 0) {
-        throw new NotFoundError("stock not found");
+        throw new NotFoundError("Product not found");
       }
 
       return result.rows;
@@ -62,10 +31,8 @@ class StockService {
   }
 
   async setStockSettings({ id, safetyStock, maximumStock }) {
-    const checkProduct = await this.getStockByProductId(id);
-    if (checkProduct.length === 0) {
-      throw new NotFoundError("product not found");
-    }
+    await this._validateProductExists(id);
+
     const query = {
       text: `
         UPDATE stock
@@ -79,7 +46,7 @@ class StockService {
     try {
       const result = await this._pool.query(query);
       if (result.rowCount === 0) {
-        throw new NotFoundError("stock not found");
+        throw new NotFoundError("Stock not found");
       }
 
       return result.rows;
@@ -101,17 +68,24 @@ class StockService {
     try {
       const result = await this._pool.query(query);
       if (result.rows.length === 0) {
-        throw new InvariantError("Produk tidak ditemukan");
+        throw new NotFoundError("Product not found");
       }
 
       const { amount, maximum_stock } = result.rows[0];
       if (amount + addedStock > maximum_stock) {
         throw new InvariantError(
-          `stock melebihi batas maksimum untuk produk dengan id ${product_id}`
+          `Stock exceeds maximum limit for product with id ${product_id}`
         );
       }
     } catch (error) {
       throw new InvariantError(error.message);
+    }
+  }
+
+  async _validateProductExists(id) {
+    const product = await this.getStockByProductId(id);
+    if (product.length === 0) {
+      throw new NotFoundError("Product not found");
     }
   }
 }

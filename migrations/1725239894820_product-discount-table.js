@@ -39,6 +39,9 @@ exports.up = (pgm) => {
     },
     deleted_at: { type: "timestamp" },
   });
+
+  pgm.createIndex("product_discount", ["product_id"]);
+  pgm.createIndex("product_discount", ["discount_id"]);
 };
 
 /**
@@ -47,5 +50,7 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("product_discount", ["product_id"]);
+  pgm.dropIndex("product_discount", ["discount_id"]);
   pgm.dropTable("product_discount");
 };

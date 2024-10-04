@@ -3,23 +3,15 @@ const beetwenDate = (startDate, endDate, column, sql) => {
     return sql;
   }
 
-  if (startDate === "") {
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 1);
-  } else {
-    startDate = new Date(startDate);
-    startDate.setDate(startDate.getDate() - 1);
+  if (startDate === "" || endDate === "") {
+    return sql;
+  } else if (startDate !== "" && endDate !== "") {
+    sql += ` AND ${column} BETWEEN '${startDate}' AND '${endDate}'`;
+  } else if (startDate !== "" && endDate === "") {
+    sql += ` AND ${column} >= '${startDate}'`;
+  } else if (startDate === "" && endDate !== "") {
+    sql += ` AND ${column} <= '${endDate}'`;
   }
-
-  if (endDate === "") {
-    endDate = new Date();
-    endDate.setDate(endDate.getDate() + 1);
-  } else {
-    endDate = new Date(endDate);
-    endDate.setDate(endDate.getDate() + 1);
-  }
-
-  sql += ` AND ${column} BETWEEN '${startDate.toISOString()}' AND '${endDate.toISOString()}' `;
   return sql;
 };
 

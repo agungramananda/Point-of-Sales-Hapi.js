@@ -11,7 +11,7 @@ class SuppliersHandler {
   async getSuppliersHandler(request, h) {
     this._validator.validateSupplierQuery(request.query);
     const { name, page, limit } = request.query;
-    const { data, infoPage } = await this._service.getAllSuppliers({
+    const { data, page_info } = await this._service.getAllSuppliers({
       name,
       page,
       limit,
@@ -21,7 +21,7 @@ class SuppliersHandler {
       .response({
         status: "success",
         data,
-        infoPage,
+        page_info,
       })
       .code(200);
   }
@@ -54,8 +54,7 @@ class SuppliersHandler {
     return h
       .response({
         status: "success",
-        message: "Supplier berhasil ditambahkan",
-        data: newSupplier,
+        message: "Supplier successfully added",
       })
       .code(201);
   }
@@ -77,10 +76,7 @@ class SuppliersHandler {
     return h
       .response({
         status: "success",
-        message: "Supplier berhasil diubah",
-        data: {
-          editedSupplier,
-        },
+        message: "Supplier successfully updated",
       })
       .code(200);
   }
@@ -95,10 +91,7 @@ class SuppliersHandler {
     return h
       .response({
         status: "success",
-        message: "Supplier berhasil dihapus",
-        data: {
-          deletedSupplier,
-        },
+        message: "Supplier successfully deleted",
       })
       .code(200);
   }

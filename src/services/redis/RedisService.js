@@ -1,11 +1,11 @@
 const { createClient } = require("redis");
 const { v4: uuidv4 } = require("uuid");
+const InvariantError = require("../../exceptions/InvariantError");
 
 class RedisService {
   constructor() {
     this._client = createClient({
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
+      url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
     });
 
     this._client.on("error", (err) => {
@@ -31,11 +31,16 @@ class RedisService {
   }
 
   async saveNotification(notification) {
-    const id = `notification:${uuidv4()}`;
-    notification.id = id;
+    console.log(notification);
     try {
-      await this._client.hSet(id, notification);
-      await this._client.expire(id, 7 * 24 * 60 * 60); // Set expiration to 7 days
+      await this._client.HSET(
+        notification.id,
+        "title",
+        notification.title,
+        "message",
+        notification.message
+      );
+      await this._client.expire(notification.id, 7 * 24 * 60 * 60); // Set expiration to 7 days
     } catch (err) {
       console.error("Error saving notification to Redis:", err);
     }
@@ -45,14 +50,20 @@ class RedisService {
     try {
       const keys = await this._client.keys("notification:*");
       const notifications = await Promise.all(
-        keys.map(async (key) => {
-          return await this._client.hGetAll(key);
-        })
+        keys.map((key) => this._client.hGetAll(key))
       );
-
       return notifications;
     } catch (err) {
-      console.error("Error getting notifications from Redis:", err);
+      throw new InvariantError(err);
+    }
+  }
+
+  async getNotificationById(id) {
+    try {
+      const notification = await this._client.keys(id);
+      return notification;
+    } catch (err) {
+      throw new InvariantError(err);
     }
   }
 }

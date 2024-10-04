@@ -9,48 +9,44 @@ exports.shorthands = undefined;
  * @returns {Promise<void> | void}
  */
 exports.up = (pgm) => {
-  pgm.createTable("vouchers", {
+  pgm.createTable("invoice", {
     id: "id",
-    code: {
+    transaction_id: {
+      type: "INT",
+      notNull: true,
+      references: '"transactions"',
+    },
+    invoice_number: {
       type: "VARCHAR(50)",
       notNull: true,
     },
-    membership_id: {
+    customer_id: {
       type: "INT",
-      notNull: true,
-      references: "membership",
+      notNull: false,
+      references: '"customer"',
     },
-    point_cost: {
-      type: "INT",
-      notNull: true,
-    },
-    discount_value: {
-      type: "INT",
+    items: {
+      type: "JSON",
       notNull: true,
     },
-    discount_type_id: {
-      type: "INT",
-      notNull: true,
-      references: "discount_type",
-    },
-    min_transaction: {
-      type: "INT",
+    sub_total: {
+      type: "DECIMAL",
       notNull: true,
     },
-    max_discount: {
-      type: "INT",
+    discount: {
+      type: "DECIMAL",
       notNull: true,
     },
-    start_date: {
-      type: "TIMESTAMP",
+    total: {
+      type: "DECIMAL",
       notNull: true,
     },
-    end_date: {
-      type: "TIMESTAMP",
+    payment: {
+      type: "DECIMAL",
       notNull: true,
     },
-    validity_period: {
-      type: "INT",
+    change: {
+      type: "DECIMAL",
       notNull: true,
     },
     created_at: {
@@ -66,11 +62,12 @@ exports.up = (pgm) => {
     deleted_at: {
       type: "TIMESTAMP",
       notNull: false,
-      default: null,
     },
   });
 
-  pgm.createIndex("vouchers", "code");
+  pgm.createIndex("invoice", "transaction_id");
+  pgm.createIndex("invoice", "customer_id");
+  pgm.createIndex("invoice", "invoice_number");
 };
 
 /**
@@ -79,6 +76,8 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
-  pgm.dropIndex("vouchers", "code");
-  pgm.dropTable("vouchers");
+  pgm.dropIndex("invoice", "transaction_id");
+  pgm.dropIndex("invoice", "customer_id");
+  pgm.dropIndex("invoice", "invoice_number");
+  pgm.dropTable("invoice");
 };

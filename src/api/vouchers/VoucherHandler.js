@@ -20,7 +20,7 @@ class VoucherHandler {
       .response({
         status: "success",
         data: vouchers.data,
-        infoPage: vouchers.infoPage,
+        page_info: vouchers.page_info,
       })
       .code(200);
   }
@@ -69,10 +69,7 @@ class VoucherHandler {
     return h
       .response({
         status: "success",
-        message: "Voucher berhasil ditambahkan",
-        data: {
-          voucherId,
-        },
+        message: "Voucher successfully added",
       })
       .code(201);
   }
@@ -84,7 +81,7 @@ class VoucherHandler {
     await this._service.editVoucher({ id, ...request.payload });
     return h.response({
       status: "success",
-      message: "Voucher berhasil diperbarui",
+      message: "Voucher successfully updated",
     });
   }
 
@@ -94,7 +91,7 @@ class VoucherHandler {
     await this._service.deleteVoucher(id);
     return h.response({
       status: "success",
-      message: "Voucher berhasil dihapus",
+      message: "Voucher successfully deleted",
     });
   }
 
@@ -104,7 +101,7 @@ class VoucherHandler {
     await this._service.redeemPoinToVoucher({ voucher_id, customer_id });
     return h.response({
       status: "success",
-      message: "Poin berhasil ditukarkan dengan voucher",
+      message: "Poin successfully redeemed to voucher",
     });
   }
 

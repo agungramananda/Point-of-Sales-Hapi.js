@@ -41,6 +41,9 @@ exports.up = (pgm) => {
       default: null,
     },
   });
+
+  pgm.createIndex("products", "product_name");
+  pgm.createIndex("products", "category_id");
 };
 
 /**
@@ -49,5 +52,7 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("products", "category_id");
+  pgm.dropIndex("products", "product_name");
   pgm.dropTable("products");
 };

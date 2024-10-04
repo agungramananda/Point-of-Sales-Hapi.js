@@ -46,6 +46,8 @@ exports.up = (pgm) => {
       type: "TIMESTAMP",
     },
   });
+
+  pgm.createIndex("customer_vouchers", ["customer_id", "voucher_id"]);
 };
 
 /**
@@ -54,5 +56,6 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("customer_vouchers", ["customer_id", "voucher_id"]);
   pgm.dropTable("customer_vouchers");
 };

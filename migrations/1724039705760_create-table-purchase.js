@@ -20,6 +20,7 @@ exports.up = (pgm) => {
   pgm.sql(
     `INSERT INTO purchase_status(status) VALUES ('pending'), ('complete'), ('return')`
   );
+
   pgm.createTable("purchase", {
     id: "id",
     supplier_id: {
@@ -93,6 +94,11 @@ exports.up = (pgm) => {
       notNull: true,
     },
   });
+
+  pgm.createIndex("purchase", "supplier_id");
+  pgm.createIndex("purchase", "status_id");
+  pgm.createIndex("purchase_details", "purchase_id");
+  pgm.createIndex("purchase_details", "product_id");
 };
 
 /**
@@ -101,6 +107,11 @@ exports.up = (pgm) => {
  * @returns {Promise<void> | void}
  */
 exports.down = (pgm) => {
+  pgm.dropIndex("purchase_details", "product_id");
+  pgm.dropIndex("purchase_details", "purchase_id");
+  pgm.dropIndex("purchase", "status_id");
+  pgm.dropIndex("purchase", "supplier_id");
+
   pgm.dropTable("purchase_details");
   pgm.dropTable("purchase");
   pgm.dropTable("purchase_status");
