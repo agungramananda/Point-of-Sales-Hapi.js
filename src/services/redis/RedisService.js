@@ -48,7 +48,7 @@ class RedisService {
 
   async getNotifications() {
     try {
-      const keys = await this._client.keys("notification:*");
+      const keys = await this._client.keys("notification*");
       const notifications = await Promise.all(
         keys.map((key) => this._client.hGetAll(key))
       );
