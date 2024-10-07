@@ -31,7 +31,7 @@ To install and run the Kasir API locally, follow these steps:
 1. Clone the repository:
 
 ```sh
-git clone https://github.com/yourusername/Kasir_API.git
+git clone https://github.com/yourusername/Kasir_API.git](https://github.com/agungramananda/Point-of-Sales-Hapi.js.git
 ```
 
 2. Navigate to the project directory:
