@@ -1,6 +1,6 @@
 # Kasir API
 
-Welcome to the Kasir API project! This API is designed to manage point of sale (POS) systems efficiently.
+Welcome to the Kasir API project! This project is the project I worked on during my internship.
 
 ## Table of Contents
 
@@ -9,19 +9,17 @@ Welcome to the Kasir API project! This API is designed to manage point of sale (
 - [Installation](#installation)
 - [Usage](#usage)
 - [Flows](#flows)
-- [License](#license)
+- [Documentation](#documentation)
 
 ## Introduction
 
-Kasir API is a robust and scalable API for managing sales, inventory, and customer data in a POS system.
+Kasir API is API for managing sales, and inventory data in a POS system.
 
 ## Features
 
 - User authentication and authorization
 - Product management
 - Sales transactions
-- Inventory tracking
-- Customer management
 
 ## Installation
 
@@ -76,7 +74,3 @@ Here are the documentation of the API : https://documenter.getpostman.com/view/3
 ## Contributing
 
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
