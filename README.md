@@ -8,8 +8,7 @@ Welcome to the Kasir API project! This API is designed to manage point of sale (
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Endpoints](#endpoints)
-- [Contributing](#contributing)
+- [Flows](#flows)
 - [License](#license)
 
 ## Introduction
@@ -68,7 +67,11 @@ After starting the server, you can access the API at `http://localhost:3000`. Us
 
 ## Flows
 
-Here are the flow of the api:
+Here are the flow of the API : https://www.figma.com/board/5prAeIQdNRJGFEl0UwZF3F/Api-Flow?node-id=0-1&node-type=canvas&t=WWuPoswuOZmvxG4l-0
+
+## Documentation
+
+Here are the documentation of the API : https://documenter.getpostman.com/view/31686580/2sAXxMesyK
 
 ## Contributing
 
